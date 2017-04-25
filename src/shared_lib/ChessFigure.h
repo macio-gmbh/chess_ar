@@ -16,7 +16,7 @@ enum FigureType {
 };
 
 struct ChessFigure {
-    FigureType figure_type = Empty;
+    FigureType figure_type = EMPTY;
 };
 
 #endif //CHESS_AR_CHESSFIGURE_H

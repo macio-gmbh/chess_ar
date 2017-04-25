@@ -5,6 +5,7 @@
 #ifndef CHESS_AR_CHESSBOARD_H
 #define CHESS_AR_CHESSBOARD_H
 
+#include <string>
 #include "ChessFigure.h"
 
 class ChessBoard {
