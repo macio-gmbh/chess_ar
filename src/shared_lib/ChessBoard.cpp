@@ -2,6 +2,7 @@
 // Created by marco on 25.04.2017.
 //
 
+#include <cstdint>
 #include "ChessBoard.h"
 
 ChessBoard::ChessBoard(std::string &fen) {
