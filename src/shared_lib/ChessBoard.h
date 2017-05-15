@@ -13,7 +13,18 @@ public:
     ChessFigure board[64];
     int last_hash;
 
+    /**
+     * Receives a FEN-String of a board and conferts it to a  chess board
+     * @param fen Is a string in fen Notation
+     */
+
+    ChessBoard(std::string&  fen);
+
     std::string toString();
+
+private:
+
+    void emtyTileSetter(int8_t emptyTileCtr, uint8_t & runner);
 };
 
 
