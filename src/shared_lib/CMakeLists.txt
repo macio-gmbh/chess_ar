@@ -5,6 +5,6 @@ if(TARGET shared_lib)
 else()
     file( GLOB LIB_SOURCES *.cpp )
     file( GLOB LIB_HEADERS *.h )
-    add_library( shared_lib ${LIB_SOURCES} ${LIB_HEADERS} )
+    add_library( shared_lib ${LIB_SOURCES} ${LIB_HEADERS} ChessColor.h)
 endif()
 
