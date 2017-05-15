@@ -6,11 +6,15 @@
 #define CHESS_AR_CHESSBOARD_H
 
 #include <string>
+#include <vector>
 #include "ChessFigure.h"
 
 class ChessBoard {
 public:
     ChessFigure board[64];
+
+    ChessColor currentMove;
+
     int last_hash;
 
     /**
