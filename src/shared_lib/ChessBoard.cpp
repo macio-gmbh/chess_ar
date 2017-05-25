@@ -117,6 +117,18 @@ ChessBoard::ChessBoard(std::string &fen) {
         }
     }
 
+    if(fenList.size() > 1) {
+        switch(fenList[1].at(0)) {
+            case 'w':
+                currentMove = ChessColor::WHITE;
+            case 'b':
+                currentMove = ChessColor::BLACK;
+            default:
+                currentMove = ChessColor::NONE;
+
+        }
+    }
+
 
 }
 
