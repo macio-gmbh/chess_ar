@@ -19,12 +19,14 @@ static void boardPrinter(std::string fen) {
 
         if ((*it) == '/') {
             std::cout << std::endl;
+
+            std::cout << "         ---------------------------------" << std::endl;
             std::cout << "         | ";
         } else if (isdigit(*it)) {
             std::stringstream ss;
             ss << *it;
             int emptySpaces = 0;
-            ss>>emptySpaces;
+            ss >> emptySpaces;
             for (int i = 0; i < emptySpaces; i++) {
                 std::cout << "0 | ";
             }
@@ -36,7 +38,7 @@ static void boardPrinter(std::string fen) {
 
     std::cout << std::endl;
     std::cout << std::endl;
-    std::cout << "Current player to move is: " ;
+    std::cout << "Current player to move is: ";
 
     if (fenList.size() > 1) {
         switch (fenList[1].at(0)) {
@@ -52,8 +54,7 @@ static void boardPrinter(std::string fen) {
         }
     }
 
-    std::cout << "Next recommened move is:  TODO" ;
-
+    std::cout << "Next recommened move is:  TODO";
 
 
 }
