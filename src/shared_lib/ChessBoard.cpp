@@ -144,7 +144,7 @@ std::string ChessBoard::toString() {
            && emptyCtr <= 8
            && board[tileCtr].figure_type != FigureType::EMPTY){
 
-            fenString = fenString + to_string(emptyCtr);
+            fenString = fenString + std::to_string(emptyCtr);
             emptyCtr = 0;
         } else {
 
@@ -208,7 +208,7 @@ std::string ChessBoard::toString() {
 
     }
 
-    //Momentaner Zug
+    //current Move
     if(currentMove == ChessColor::WHITE) {
         fenString = fenString + "  w";
     } else {
