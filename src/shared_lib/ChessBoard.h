@@ -18,7 +18,7 @@ public:
     //default to white, since it is the starting color
     ChessColor currentMove = ChessColor::WHITE;
 
-    int last_hash;
+    int64_t current_hash;
 
     /**
      * Receives a FEN-String of a board and converts it to a  chess board.
