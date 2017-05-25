@@ -151,94 +151,102 @@ ChessBoard::ChessBoard(std::string &fen) {
 
 std::string ChessBoard::toString() {
 
-    int8_t  emptyCtr = 0;
-    int8_t  tileCtr  = 0;
+    int8_t emptyCtr = 0;
+    int8_t tileCtr = 0;
     std::string fenString;
 
-    while(tileCtr < 64) {
+    while (tileCtr < 64) {
 
-        if(emptyCtr > 0
-           && emptyCtr <= 8
-           && board[tileCtr].figure_type != FigureType::EMPTY){
+        switch (board[tileCtr].figure_type) {
+            case FigureType::PAWN : {
+                if (board[tileCtr].color == ChessColor::BLACK) {
+                    fenString = fenString + "p";
+                } else {
+                    fenString = fenString + "P";
+                }
+                break;
+            }
+            case FigureType::ROOK : {
+                if (board[tileCtr].color == ChessColor::BLACK) {
+                    fenString = fenString + "r";
+                } else {
+                    fenString = fenString + "R";
+                }
+                break;
+            }
+            case FigureType::KNIGHT : {
+                if (board[tileCtr].color == ChessColor::BLACK) {
+                    fenString = fenString + "n";
+                } else {
+                    fenString = fenString + "N";
+                }
+                break;
+            }
+            case FigureType::BISHOP : {
+                if (board[tileCtr].color == ChessColor::BLACK) {
+                    fenString = fenString + "b";
+                } else {
+                    fenString = fenString + "B";
+                }
+                break;
+            }
+            case FigureType::QUEEN : {
+                if (board[tileCtr].color == ChessColor::BLACK) {
+                    fenString = fenString + "q";
+                } else {
+                    fenString = fenString + "Q";
+                }
+                break;
+            }
+            case FigureType::KING : {
+                if (board[tileCtr].color == ChessColor::BLACK) {
+                    fenString = fenString + "k";
+                } else {
+                    fenString = fenString + "K";
+                }
+                break;
+            }
+            default: {
 
-            fenString = fenString + std::to_string(emptyCtr);
-            emptyCtr = 0;
-        } else {
+                emptyCtr++;
 
-            switch (board[tileCtr].figure_type) {
-                case FigureType::PAWN : {
-                    if(board[tileCtr].color == ChessColor ::BLACK) {
-                        fenString = fenString +"p";
-                    } else {
-                        fenString = fenString +"P";
-                    }
-                }
-                case FigureType::ROOK : {
-                    if(board[tileCtr].color == ChessColor ::BLACK) {
-                        fenString = fenString +"r";
-                    } else {
-                        fenString = fenString +"R";
-                    }
-                }
-                case FigureType::KNIGHT : {
-                    if(board[tileCtr].color == ChessColor ::BLACK) {
-                        fenString = fenString +"n";
-                    } else {
-                        fenString = fenString +"N";
-                    }
-                }
-                case FigureType::BISHOP : {
-                    if(board[tileCtr].color == ChessColor ::BLACK) {
-                        fenString = fenString +"b";
-                    } else {
-                        fenString = fenString +"B";
-                    }
-                }
-                case FigureType::QUEEN : {
-                    if(board[tileCtr].color == ChessColor ::BLACK) {
-                        fenString = fenString +"q";
-                    } else {
-                        fenString = fenString +"Q";
-                    }
-                }
-                case FigureType::KING : {
-                    if(board[tileCtr].color == ChessColor ::BLACK) {
-                        fenString = fenString +"p";
-                    } else {
-                        fenString = fenString +"P";
-                    }
-                }
-                default: {
-                    emptyCtr++;
+                if (emptyCtr <= 8 && ((tileCtr == 63)
+                                      || (!board[tileCtr + 1].figure_type == FigureType::EMPTY) ||
+                                      (tileCtr + 1) % 8 == 0)) {
+                    fenString = fenString + std::to_string(emptyCtr);
+                    emptyCtr = 0;
                 }
 
             }
+
         }
+
 
         tileCtr++;
 
         //a row has ended
-        if(tileCtr % 8 == 0) {
-            fenString = fenString +"/";
+        if (tileCtr % 8 == 0) {
+            fenString = fenString + "/";
         }
 
 
     }
 
     //current Move
-    if(currentMove == ChessColor::WHITE) {
+    if (currentMove == ChessColor::WHITE) {
         fenString = fenString + "  w";
     } else {
         fenString = fenString + "  b";
     }
 
+    return fenString;
 
 
 }
 
-void ChessBoard::emtyTileSetter(int8_t emptyTileCtr, uint8_t & runner) {
+void ChessBoard::emtyTileSetter(int8_t emptyTileCtr, uint8_t &runner) {
 
-    for(int8_t i = 0; i < emptyTileCtr; i++) {
+    for (int8_t i = 0; i < emptyTileCtr; i++) {
         board[runner].color = ChessColor::NONE;
         board[runner].figure_type = FigureType::EMPTY;
         runner++;
