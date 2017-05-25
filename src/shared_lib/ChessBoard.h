@@ -5,20 +5,24 @@
 #ifndef CHESS_AR_CHESSBOARD_H
 #define CHESS_AR_CHESSBOARD_H
 
-#include <string>
-#include <vector>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/container/vector.hpp>
 #include "ChessFigure.h"
 
+using namespace boost::container;
 class ChessBoard {
 public:
     ChessFigure board[64];
 
-    ChessColor currentMove;
+    //default to white, since it is the starting color
+    ChessColor currentMove = ChessColor::WHITE;
 
     int last_hash;
 
     /**
-     * Receives a FEN-String of a board and conferts it to a  chess board
+     * Receives a FEN-String of a board and converts it to a  chess board.
+     * Only the current Player and the Order on the Chess board are currently stored.
      * @param fen Is a string in fen Notation
      */
 

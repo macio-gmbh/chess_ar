@@ -7,8 +7,8 @@
 
 ChessBoard::ChessBoard(std::string &fen) {
     char currentLetter;
-    std::vector fenList;
-    std::vector::split(fenList, fen," ");
+    vector<std::string> fenList;
+    boost::split(fenList, fen,boost::is_any_of(" "));
 
     uint8_t runner = 0;
 
