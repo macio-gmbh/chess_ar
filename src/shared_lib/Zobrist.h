@@ -17,6 +17,7 @@
 #include <iostream>
 #include <boost/algorithm/string.hpp>
 #include <boost/container/vector.hpp>
+#include "ChessBoard.h"
 
 using namespace boost::container;
 
@@ -24,6 +25,7 @@ class Zobrist {
 
 public:
     Zobrist(std::string fen);
+    Zobrist(ChessBoard board);
     uint64_t  zobristHash;
 private:
     static const std::uint64_t pawnZobristKeys[2][64];

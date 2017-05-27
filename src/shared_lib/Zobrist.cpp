@@ -119,3 +119,69 @@ Zobrist::Zobrist(std::string fen) {
         }
     }
 }
+
+Zobrist::Zobrist(ChessBoard board) {
+    Zobrist::zobristHash = 0;
+    for(int tileCtr = 0; tileCtr<64; tileCtr++) {
+
+        switch (board.board[tileCtr].figure_type) {
+            case FigureType::PAWN : {
+                if (board.board[tileCtr].color == ChessColor::BLACK) {
+                    Zobrist::zobristHash ^= Zobrist::pawnZobristKeys[0][tileCtr];
+                } else {
+                    Zobrist::zobristHash ^= Zobrist::pawnZobristKeys[1][tileCtr];
+                }
+                break;
+            }
+            case FigureType::ROOK : {
+                if (board.board[tileCtr].color == ChessColor::BLACK) {
+                    Zobrist::zobristHash ^= Zobrist::rookZobristKeys[0][tileCtr];
+                } else {
+                    Zobrist::zobristHash ^= Zobrist::rookZobristKeys[1][tileCtr];
+                }
+                break;
+            }
+            case FigureType::KNIGHT : {
+                if (board.board[tileCtr].color == ChessColor::BLACK) {
+                    Zobrist::zobristHash ^= Zobrist::knightZobristKeys[0][tileCtr];
+                } else {
+                    Zobrist::zobristHash ^= Zobrist::knightZobristKeys[1][tileCtr];
+                }
+                break;
+            }
+            case FigureType::BISHOP : {
+                if (board.board[tileCtr].color == ChessColor::BLACK) {
+                    Zobrist::zobristHash ^= Zobrist::bishopZobristKeys[0][tileCtr];
+                } else {
+                    Zobrist::zobristHash ^= Zobrist::bishopZobristKeys[1][tileCtr];
+                }
+                break;
+            }
+            case FigureType::QUEEN : {
+                if (board.board[tileCtr].color == ChessColor::BLACK) {
+                    Zobrist::zobristHash ^= Zobrist::queenZobristKeys[0][tileCtr];
+                } else {
+                    Zobrist::zobristHash ^= Zobrist::queenZobristKeys[1][tileCtr];
+                }
+                break;
+            }
+            case FigureType::KING : {
+                if (board.board[tileCtr].color == ChessColor::BLACK) {
+                    Zobrist::zobristHash ^= Zobrist::kingZobristKeys[0][tileCtr];
+                } else {
+                    Zobrist::zobristHash ^= Zobrist::kingZobristKeys[1][tileCtr];
+                }
+                break;
+            }
+            default: {
+                break;
+            }
+
+        }
+
+    }
+
+    if(board.currentMove == WHITE) {
+        Zobrist::zobristHash^=Zobrist::whiteMove;
+    }
+}
