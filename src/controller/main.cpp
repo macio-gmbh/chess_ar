@@ -38,5 +38,15 @@ int main() {
     std::string res2 = currentBoard.toString();
    std::cout<< "Initial to_string Test : " << res2 <<std::endl;
 
+
+    if (Zobrist(testBoard).zobristHash != Zobrist(currentBoard).zobristHash) {
+        std::cout<< "Test Zobrist Calculation. Hashes are not equal"<<std::endl;
+        std::cout << currentBoard.currentHash << std::endl;
+        std::cout<<Zobrist(currentBoard).zobristHash<<std::endl;
+    }else {
+        std::cout<< "Test Zobrist Calculation.  Hash is equal" <<std::endl;
+    }
+
+
     return 0;
 }
