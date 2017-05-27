@@ -5,7 +5,8 @@
 #include <cstdint>
 #include "ChessBoard.h"
 
-ChessBoard::ChessBoard(std::string &fen) {
+ChessBoard::ChessBoard(std::string &fen, std::uint64_t hash):
+    currentHash {hash}{
     char currentLetter;
     vector<std::string> fenList;
     boost::split(fenList, fen, boost::is_any_of(" "));

@@ -26,7 +26,7 @@ public:
      * @param fen Is a string in fen Notation
      */
 
-    ChessBoard(std::string&  fen);
+    ChessBoard(std::string&  fen, std::uint64_t hash);
 
     std::string toString();
 
