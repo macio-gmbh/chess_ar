@@ -87,6 +87,7 @@ Zobrist::Zobrist(std::string fen) {
                 break;
             }
             case '/' : {
+                iBoard--;
                 break;
             }
             default:
