@@ -18,7 +18,7 @@ public:
     //default to white, since it is the starting color
     ChessColor currentMove = ChessColor::WHITE;
 
-    int64_t current_hash;
+    uint64_t currentHash;
 
     /**
      * Receives a FEN-String of a board and converts it to a  chess board.
@@ -26,7 +26,7 @@ public:
      * @param fen Is a string in fen Notation
      */
 
-    ChessBoard(std::string&  fen);
+    ChessBoard(std::string&  fen, std::uint64_t hash);
 
     std::string toString();
 
