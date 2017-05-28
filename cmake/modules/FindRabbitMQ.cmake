@@ -6,16 +6,15 @@
 #   RabbitMQ_INCLUDE_DIRS - where to find amqp.h
 #   RabbitMQ_LIBRARIES    - the rabbitmq library
 #   RabbitMQ_FOUND        - True if RabbitMQ was found
+#   RabbitMQ_LIBS         - the lib files for RabbitMQ
 
 Include(FindModule)
-FIND_MODULE(RabbitMQ amqp.h "" "" rabbitmq "" "")
-
-message(${RabbitMQ_LIBRARY})
+FIND_MODULE(RabbitMQ amqp.h "" "" librabbitmq.4 "" "")
 
 if (RabbitMQ_FOUND)
     message("found RabbitMQ")
 else()
-    message("Not found")
+    message("RabbitMQ Not found")
 endif()
 
 

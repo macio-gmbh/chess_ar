@@ -19,10 +19,16 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost 1.60.0 COMPONENTS filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
+
+# RabbitMQ C library dependency
+FIND_PACKAGE(RabbitMQ)
+INCLUDE_DIRECTORIES( ${RabbitMQ_INCLUDE_DIR})
+
 add_subdirectory(src/shared_lib)
 add_subdirectory(src/controller)
 add_subdirectory(src/eye)
 add_subdirectory(src/gui)
+add_subdirectory(src/rabbitmq_test)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
@@ -31,5 +37,6 @@ if(COMPILER_SUPPORTS_CXX11)
 else(COMPILER_SUPPORTS_CXX11)
     message(FATAL_ERROR "${COMPILER_SUPPORTS_CXX11}")
 endif(COMPILER_SUPPORTS_CXX11)
+
 
 
