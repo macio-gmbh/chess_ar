@@ -4,6 +4,20 @@ project(chess_ar)
 set(CMAKE_CXX_STANDARD 11)   #C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
+# dirty windows hack change that later to be a environment variable
+IF (WIN32)
+    set("BOOST_ROOT" $ENV{BOOST_ROOT})
+endif()
+
+set(Boost_USE_STATIC_LIBS        ON) # only find static libs
+set(Boost_USE_MULTITHREADED      ON)
+set(Boost_USE_STATIC_RUNTIME    OFF)
+
+# this needs to be here so it can be accessed from all targets
+find_package(Boost 1.60.0 COMPONENTS filesystem REQUIRED)
+include_directories(${Boost_INCLUDE_DIRS})
 
 add_subdirectory(src/shared_lib)
 add_subdirectory(src/controller)
