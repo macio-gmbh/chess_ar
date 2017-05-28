@@ -6,9 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-# dirty windows hack change that later to be a environment variable
 IF (WIN32)
-    set("BOOST_ROOT" $ENV{BOOST_ROOT})
+    set(BOOST_ROOT CACHE PATH "Root folder from Boost")
 endif()
 
 set(Boost_USE_STATIC_LIBS        ON) # only find static libs
