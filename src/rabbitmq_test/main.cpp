@@ -8,8 +8,8 @@
 
 int main() {
     // Sends and recives a message via RabbitMQ, RabbitMQ server needs to be running
-    RabbitMQReceiver receiver("localhost", 5672, "eyeExchange");
-    RabbitMQSender sender("localhost", 5672, "eyeExchange");
+    RabbitMQReceiver receiver("localhost", 5672, "testExchange");
+    RabbitMQSender sender("localhost", 5672, "testExchange");
     sender.Send("Rabbit MQ test message");
     printf(receiver.Receive());
     return 0;

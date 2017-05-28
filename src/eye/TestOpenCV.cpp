@@ -4,24 +4,25 @@
 
 using namespace cv;
 
-int test_opencv()
+int test_opencv ()
 {
     Mat image;
-    image = imread( "Lenna.png", 1 );
+    image = imread ("Lenna.png", 1);
 
-    if ( !image.data )
+    if (!image.data)
     {
-        printf("No image data \n");
+        printf ("No image data \n");
         return -1;
     }
-    namedWindow("Display Image", WINDOW_AUTOSIZE );
-    imshow("Display Image", image);
+    namedWindow ("Display Image", WINDOW_AUTOSIZE);
+    imshow ("Display Image", image);
 
-    waitKey(0);
+    waitKey (0);
 
     return 0;
 }
 
-int main() {
-    return test_opencv();
+int main ()
+{
+    return test_opencv ();
 }
