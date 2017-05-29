@@ -20,12 +20,19 @@ public:
 
 
     /**
+     *
+     * Default constructor
+     * @return
+     */
+    ChessBoard Chessboard();
+    /**
      * Receives a FEN-String of a board and converts it to a  chess board.
      * Only the current Player and the Order on the Chess board are currently stored.
      * @param fen Is a string in fen Notation
      */
 
-    ChessBoard(std::string&  fen, std::uint64_t hash);
+    ChessBoard(std::string&  fen);
+
 
     std::string toString();
 
