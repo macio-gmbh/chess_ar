@@ -25,8 +25,19 @@ const std::uint64_t Zobrist::queenZobristKeys[2][64] = {{0x720bf5f26f4d2eaa, 0x1
 const std::uint64_t Zobrist::kingZobristKeys[2][64] = {{0x2102ae466ebb1148, 0xe87fbb46217a360e, 0x310cb380db6f7503, 0xb5fdfc5d3132c498, 0xdaf8e9829fe96b5f, 0xcac09afbddd2cdb4, 0xb862225b055b6960, 0x55b6344cf97aafae, 0x46e3ecaaf453ce9,  0x962aceefa82e1c84, 0xf5b4b0b0d2deeeb4, 0x1af3dbe25d8f45da, 0xf9f4892ed96bd438, 0xc4c118bfe78feaae, 0x7a69afdcc42261a,  0xf8549e1a3aa5e00d, 0x486289ddcc3d6780, 0x222bbfae61725606, 0x2bc60a63a6f3b3f2, 0x177e00f9fc32f791, 0x522e23f3925e319e, 0x9c2ed44081ce5fbd, 0x964781ce734b3c84, 0xf05d129681949a4c, 0xd586bd01c5c217f6, 0x233003b5a6cfe6ad, 0x24c0e332b70019b0, 0x9da058c67844f20c, 0xe4d9429322cd065a, 0x1fab64ea29a2ddf7, 0x8af38731c02ba980, 0x7dc7785b8efdfc80, 0x93cbe0b699c2585d, 0x1d95b0a5fcf90bc6, 0x17efee45b0dee640, 0x9e4c1269baa4bf37, 0xd79476a84ee20d06, 0xa56a5f0bfe39272,  0x7eba726d8c94094b, 0x5e5637885f29bc2b, 0xc61bb3a141e50e8c, 0x2785338347f2ba08, 0x7ca9723fbb2e8988, 0xce2f8642ca0712dc, 0x59300222b4561e00, 0xc2b5a03f71471a6f, 0xd5f9e858292504d5, 0x65fa4f227a2b6d79, 0x71f1ce2490d20b07, 0xe6c42178c4bbb92e, 0xa9c32d5eae45305, 0xc335248857fa9e7, 0x142de49fff7a7c3d, 0x64a53dc924fe7ac9, 0x9f6a419d382595f4, 0x150f361dab9dec26, 0xd20d8c88c8ffe65f, 0x917f1dd5f8886c61, 0x56986e2ef3ed091b, 0x5fa7867caf35e149, 0x81a1549fd6573da5, 0x96fbf83a12884624, 0xe728e8c83c334074, 0xf1bcc3d275afe51a},
                                                        {0xd6b04d3b7651dd7e, 0xe34a1d250e7a8d6b, 0x53c065c6c8e63528, 0x1bdea12e35f6a8c9, 0x21874b8b4d2dbc4f, 0x3a88a0fbbcb05c63, 0x43ed7f5a0fae657d, 0x230e343dfba08d33, 0xd4c718bc4ae8ae5f, 0x9eedeca8e272b933, 0x10e8b35af3eeab37, 0xe09b88e1914f7af,  0x3fa9ddfb67e2f199, 0xb10bb459132d0a26, 0x2c046f22062dc67d, 0x5e90277e7cb39e2d, 0xb49b52e587a1ee60, 0xac042e70f8b383f2, 0x89c350c893ae7dc1, 0xb592bf39b0364963, 0x190e714fada5156e, 0xec8177f83f900978, 0x91b534f885818a06, 0x81536d601170fc20, 0x57e3306d881edb4f, 0xa804d18b7097475,  0xe74733427b72f0c1, 0x24b33c9d7ed25117, 0xe805a1e290cf2456, 0x3b544ebe544c19f9, 0x3e666e6f69ae2c15, 0xfb152fe3ff26da89, 0x1a4ff12616eefc89, 0x990a98fd5071d263, 0x84547ddc3e203c94, 0x7a3aec79624c7da,  0x8a328a1cedfe552c, 0xd1e649de1e7f268b, 0x2d8d5432157064c8, 0x4ae7d6a36eb5dbcb, 0x4659d2b743848a2c, 0x19ebb029435dcb0f, 0x4e9d2827355fc492, 0xccec0a73b49c9921, 0x46c9feb55d120902, 0x8d2636b81555a786, 0x30c05b1ba332f41c, 0xf6f7fd1431714200, 0xabbdcdd7ed5c0860, 0x9853eab63b5e0b35, 0x352787baa0d7c22f, 0xc7f6aa2de59aea61, 0x3727073c2e134b1, 0x5a0f544dd2b1fb18, 0x74f85198b05a2e7d, 0x963ef2c96b33be31, 0xff577222c14f0a3a, 0x4e4b705b92903ba4, 0x730499af921549ff, 0x13ae978d09fe5557, 0xd9e92aa246bf719e, 0x7a4c10ec2158c4a6, 0x49cad48cebf4a71e, 0xcf05daf5ac8d77b0}};
 
+Zobrist::Zobrist() {
+
+}
 
 Zobrist::Zobrist(std::string fen) {
+    Zobrist::createZobristFromFen(fen);
+}
+
+Zobrist::Zobrist(ChessBoard board) {
+   Zobrist::createZobristFromBoard(board);
+}
+
+void Zobrist::createZobristFromFen(std::string& fen){
     Zobrist::zobristHash = 0;
     char currentLetter;
     vector<std::string> fenList;
@@ -111,7 +122,7 @@ Zobrist::Zobrist(std::string fen) {
     if (fenList.size() > 1) {
         switch (fenList[1].at(0)) {
             case 'w':
-            Zobrist::zobristHash ^= Zobrist::whiteMove;
+                Zobrist::zobristHash ^= Zobrist::whiteMove;
                 break;
             default:
                 break;
@@ -119,8 +130,7 @@ Zobrist::Zobrist(std::string fen) {
         }
     }
 }
-
-Zobrist::Zobrist(ChessBoard board) {
+void Zobrist::createZobristFromBoard(ChessBoard& board) {
     Zobrist::zobristHash = 0;
     for(int tileCtr = 0; tileCtr<64; tileCtr++) {
 

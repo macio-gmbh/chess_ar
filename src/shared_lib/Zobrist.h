@@ -24,6 +24,7 @@ using namespace boost::container;
 class Zobrist {
 
 public:
+    Zobrist();
     Zobrist(std::string fen);
     Zobrist(ChessBoard board);
     uint64_t  zobristHash;
@@ -36,7 +37,8 @@ private:
     static const std::uint64_t kingZobristKeys[2][64];
 
     static  const std::uint64_t whiteMove = 0xf8d626aaaf278509;
-
+    void createZobristFromFen(std::string& fen);
+    void createZobristFromBoard(ChessBoard& board);
 
 };
 
