@@ -233,17 +233,14 @@ int main()
     //return test_opencv ();
     std::vector<std::pair<Mat, int>> dict;
 
-
-
     namespace fs = boost::filesystem;
+    train("chessBoard/empty/", dict, -1);
     train("chessBoard/king/", dict, 1);
     train("chessBoard/queen/", dict, 2);
     train("chessBoard/rook/", dict, 3);
     train("chessBoard/bishop/", dict,4);
     train("chessBoard/knight/", dict ,5);
     train("chessBoard/pawn/", dict, 6);
-
-
 
 //
 //    //0 - 63
@@ -276,7 +273,7 @@ int main()
 //        }
 //    }
 
-    std::ofstream ofs("matrices.bin", std::ios::out | std::ios::binary);
+    std::ofstream ofs("dict.bin", std::ios::out | std::ios::binary);
     { // use scope to ensure archive goes out of scope before stream
         boost::archive::binary_oarchive oa(ofs);
         oa << dict;

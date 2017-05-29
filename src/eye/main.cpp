@@ -13,35 +13,43 @@
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/filesystem.hpp>
 
-const bool USE_STATIC_IMAGE = true;
+const bool USE_STATIC_IMAGE = false;
 
-double minPeri = 120;
-double maxPeri = 200;
+double minPeri = 200;
+double maxPeri = 450;
 double periScale = 0.05;
 std::vector<std::pair<cv::Mat, int>> dict;
+bool writeNextFigures = false;
 
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
-void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours);
+void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours);
 
 int main()
 {
-    // load the dictionary
-    std::ifstream ifs("matrices.bin", std::ios::binary);
-    { // use scope to ensure archive goes out of scope before stream
-        boost::archive::binary_iarchive ia(ifs);
-        ia >> dict;
-
+    if (!boost::filesystem::exists("dict.bin"))
+    {
+        std::cout << "Can't find the directory, starting without piece recognition" << std::endl;
     }
-    ifs.close();
+    else
+    {
+        // load the dictionary
+        std::ifstream ifs("dict.bin", std::ios::binary);
+        { // use scope to ensure archive goes out of scope before stream
+            boost::archive::binary_iarchive ia(ifs);
+            ia >> dict;
+
+        }
+        ifs.close();
+    }
 
     RabbitMQSender sender("localhost", 5672, "EyeToController");
 
     std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     ChessBoard currentBoard = ChessBoard(initialBoard);
 
-    cv::VideoCapture capture(0);
+    cv::VideoCapture capture(1);
     cv::Mat camFrame;
     cv::Mat chessImage;
     bool staticImage = false;
@@ -62,6 +70,9 @@ int main()
         capture.release();
         //return 0;
     }
+
+    capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+    capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
     // main loop
     while (true)
@@ -85,10 +96,10 @@ int main()
         std::vector<std::vector<cv::Point> > quads = GetChessQuads(gray);
 
         // test draw the contours onto the original image
-        //DrawConotursRandomColor(camFrame, quads);
+        DrawConotursRandomColor(camFrame, quads);
 
         // find the figures
-        DetectFigures(gray, quads);
+        DetectFigures(camFrame, gray, quads);
 
         // recreate the chessboard
 
@@ -98,9 +109,19 @@ int main()
         // show the input image in a window
         imshow("cam", camFrame);
         imshow("gray", gray);
-        if (cv::waitKey(30) == 27)
+        char key = cv::waitKey(30);
+        if (key == 'c')
+        {
+            imwrite("camFrame.png", camFrame);
+        }
+        if (key == 'f')
+        {
+            writeNextFigures = true;
+        }
+        else if (key == 27)
+        {
             break;
-
+        }
     }
     return 0;
 }
@@ -114,7 +135,7 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
 
     std::vector<cv::Vec2f> lines;
     // detect lines
-    HoughLines(edges, lines, 1.3, CV_PI / 180, 120);
+    HoughLines(edges, lines, 1.25, CV_PI / 180, 150);
 
     // draw the lines in a seperate mat for better rectangle finding
     for (size_t i = 0; i < lines.size(); i++)
@@ -165,28 +186,11 @@ void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> >
 {
 // always create the same random Range so its deterministic
     cv::RNG rng(12345);
-
-
-    // get biggest contour
-    int biggestI = 0;
-    int size = 0;
-
     for (int i = 0; i < contours.size(); i++)
     {
-        if (contours[i].size() > size)
-        {
-            biggestI = i;
-            size = contours[i].size();
-        }
+        cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+        drawContours(image, contours, i, color, 2, 8);
     }
-
-    cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-    drawContours(image, contours, biggestI, color, 2, -1);
-//    for (int i = 0; i < contours.size(); i++)
-//    {
-//        cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-//        drawContours(image, contours, i, color, 2, 8);
-//    }
 }
 
 std::vector<std::vector<cv::Point>> MergeContours(std::vector<std::vector<cv::Point>> contours)
@@ -267,9 +271,8 @@ cv::Mat CreateMask(cv::Mat &image)
     return mask;
 }
 
-void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours)
+void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours)
 {
-
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::Mat mTest, mThresh, mConnected;
@@ -287,8 +290,11 @@ void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chess
         boundRect.height -= 4;
         cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
 
-        //std::string fileName = "image" + std::to_string(i) + ".png";
-        //imwrite(fileName, imageRoi);
+        if (writeNextFigures)
+        {
+            std::string fileName = "image" + std::to_string(i) + ".png";
+            imwrite(fileName, imageRoi);
+        }
 
         cv::Mat mask = CreateMask(imageRoi);
 
@@ -301,11 +307,35 @@ void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chess
         {
             //imshow("test", ft);
             id = classifier(dict, ft); // returns detected gesture from dictionary
+            std::string figureName = "";
+
+            switch (id)
+            {
+            case 1:figureName = "King";
+                break;
+            case 2:figureName = "QUEEN";
+                break;
+            case 3:figureName = "ROOK";
+                break;
+            case 4:figureName = "BISHOP";
+                break;
+            case 5:figureName = "KNIGHT";
+                break;
+            case 6:figureName = "PAWN";
+                break;
+            }
+
             std::cout << std::to_string(id) << std::endl;
-        } else {
+
+            putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
+                .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+
+        }
+        else
+        {
             std::cout << std::to_string(-1) << std::endl;
         }
-
+        writeNextFigures = false;
     }
 }
 
