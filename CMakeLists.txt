@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.6)
 project(chess_ar)
 
 set(CMAKE_CXX_STANDARD 11)   #C++11
@@ -15,7 +15,7 @@ set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
 # this needs to be here so it can be accessed from all targets
-find_package(Boost 1.50.0 COMPONENTS filesystem REQUIRED)
+find_package(Boost 1.50.0 COMPONENTS filesystem serialization REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 

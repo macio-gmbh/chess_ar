@@ -1,31 +1,45 @@
 #include <iostream>
-#include <unistd.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "MatchDescriptor.h"
+#include "./FourierDescriptor.h"
 #include "../shared_lib/rabbitmq/RabbitMQSender.h"
 #include "../shared_lib/ChessBoard.h"
-#include "../shared_lib/Zobrist.h"
+
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/utility.hpp>
+#include "cvmat_serialization.h"
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/filesystem.hpp>
+
 const bool USE_STATIC_IMAGE = true;
 
-double minPeri = 100;
-double maxPeri = 250;
+double minPeri = 120;
+double maxPeri = 200;
 double periScale = 0.05;
+std::vector<std::pair<cv::Mat, int>> dict;
 
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
-void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours)
+void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
 void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours);
 
 int main()
 {
-    RabbitMQSender sender("localhost", 5672, "eyeExchange");
+    // load the dictionary
+    std::ifstream ifs("matrices.bin", std::ios::binary);
+    { // use scope to ensure archive goes out of scope before stream
+        boost::archive::binary_iarchive ia(ifs);
+        ia >> dict;
+
+    }
+    ifs.close();
+
+    RabbitMQSender sender("localhost", 5672, "EyeToController");
 
     std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    Zobrist initialZobrist = Zobrist(initialBoard);
-    ChessBoard currentBoard = ChessBoard(initialBoard, initialZobrist.zobristHash);
+    ChessBoard currentBoard = ChessBoard(initialBoard);
 
     cv::VideoCapture capture(0);
     cv::Mat camFrame;
@@ -37,7 +51,7 @@ int main()
     {
         std::cout << "cannot open camera, using the static image \n";
         staticImage = true;
-        chessImage = cv::imread("chess.png", 1);
+        chessImage = cv::imread("chessBoard/chess.png", 1);
 
         if (!chessImage.data)
         {
@@ -96,11 +110,11 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
     // first: find the hough lines and draw em in a seperate mat
     cv::Mat edges;
     cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
-    Canny(grayImage, edges, 50, 200, 3);
+    Canny(grayImage, edges, 100, 515, 3);
 
     std::vector<cv::Vec2f> lines;
     // detect lines
-    HoughLines(edges, lines, 1, CV_PI / 180, 130);
+    HoughLines(edges, lines, 1.3, CV_PI / 180, 120);
 
     // draw the lines in a seperate mat for better rectangle finding
     for (size_t i = 0; i < lines.size(); i++)
@@ -151,11 +165,106 @@ void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> >
 {
 // always create the same random Range so its deterministic
     cv::RNG rng(12345);
+
+
+    // get biggest contour
+    int biggestI = 0;
+    int size = 0;
+
     for (int i = 0; i < contours.size(); i++)
     {
-        cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
-        drawContours(image, contours, i, color, 2, 8);
+        if (contours[i].size() > size)
+        {
+            biggestI = i;
+            size = contours[i].size();
+        }
     }
+
+    cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+    drawContours(image, contours, biggestI, color, 2, -1);
+//    for (int i = 0; i < contours.size(); i++)
+//    {
+//        cv::Scalar color = cv::Scalar(rng.uniform(0, 255), rng.uniform(0, 255), rng.uniform(0, 255));
+//        drawContours(image, contours, i, color, 2, 8);
+//    }
+}
+
+std::vector<std::vector<cv::Point>> MergeContours(std::vector<std::vector<cv::Point>> contours)
+{
+
+    std::vector<std::vector<cv::Point>> hull;
+    std::vector<cv::Point> points;
+
+    for (auto contour : contours)
+    {
+        for (auto point : contour)
+        {
+            points.push_back(point);
+        }
+    }
+    // merge contours
+    double peri = arcLength(points, true);
+
+    std::vector<cv::Point> approxContour;
+    approxPolyDP(points, approxContour, peri * 0.001, true);
+
+    hull.push_back(approxContour);
+
+    return hull;
+}
+
+double getPeriSum(std::vector<std::vector<cv::Point>> contours)
+{
+    double peri = 0;
+    for (auto contour : contours)
+    {
+        peri += arcLength(contour, true) * 2;
+    }
+    // merge contours
+    return peri;
+}
+
+cv::Mat CreateMask(cv::Mat &image)
+{
+    cv::Mat blurred, Morpholige, edges, img1;
+    image.copyTo(img1);
+
+    //bitwise_not(imageRoi, m1);
+    medianBlur(image, blurred, 3);
+    morphologyEx(blurred, Morpholige, cv::MorphTypes::MORPH_OPEN, NULL);
+    morphologyEx(Morpholige, Morpholige, cv::MorphTypes::MORPH_CLOSE, NULL);
+
+    double minThreshold = 100;
+    double maxThreshold = 200;
+    int apertureSize = 3;
+
+    // detect edges
+    Canny(Morpholige, edges, minThreshold, maxThreshold, apertureSize);
+
+    std::vector<std::vector<cv::Point>> contours;
+    std::vector<cv::Vec4i> hierarchy;
+
+    //threshold(m1, mThresh, 125, 255, cv::THRESH_BINARY);
+    //findContours(edges, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+
+    findContours(edges, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+
+    // you could also reuse img1 here
+    cv::Mat mask = cv::Mat::zeros(img1.rows, img1.cols, CV_8UC1);
+
+    // CV_FILLED fills the connected components found
+    drawContours(mask, contours, -1, cv::Scalar(255), CV_FILLED);
+
+    cv::Mat kernel = getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(11, 11));
+    morphologyEx(mask, mask, cv::MorphTypes::MORPH_CLOSE, kernel);
+
+    //imshow("Display Image", edges);
+
+//    if (mask.data)
+    //      imshow("contours", mask);
+
+
+    return mask;
 }
 
 void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours)
@@ -164,104 +273,39 @@ void DetectFigures(cv::Mat inputImage, std::vector<std::vector<cv::Point>> chess
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
     cv::Mat mTest, mThresh, mConnected;
+    cv::Mat edges, inputCopy, m1;
+    //cv::Mat inputCopy = cv::imread("scene2.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+    inputImage.copyTo(inputCopy);
 
-    cv::Mat edges, m, m1, m2, m3, m4, m5;
-    //cv::Mat m = cv::imread("scene2.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-    inputImage.copyTo(m);
-
-    // todo better threshold here
-    bitwise_not(m, m1);
-
-    medianBlur(m1, m1, 3);
-    morphologyEx(m1, m1, cv::MorphTypes::MORPH_OPEN, NULL);
-    morphologyEx(m1, m1, cv::MorphTypes::MORPH_CLOSE, NULL);
-
-    double minThreshold = 36;
-    double maxThreshold = 129;
-    int apertureSize = 3;
-
-    Canny(m1, edges, minThreshold, maxThreshold, apertureSize);
-
-    //threshold(m1, mThresh, 125, 255, cv::THRESH_BINARY);
-    findContours(edges, contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_NONE);
-    DrawConotursRandomColor(inputImage, contours);
-
-    if (mThresh.data)
-        imshow("mThresh", mThresh);
-
-    int sizeMax = 0, idx = 0;
-    std::vector<int> ctrSelec;
-    for (int i = 0; i < contours.size(); i++)
+    for (int i = 0; i < chessContours.size(); ++i)
     {
-        if (contours[i].size() >= 500)
+        // seperate the figure fromt he rest
+        cv::Rect boundRect = boundingRect(Mat(chessContours[i]));
+        boundRect.x += 2;
+        boundRect.y += 4;
+        boundRect.width -= 4;
+        boundRect.height -= 4;
+        cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
+
+        //std::string fileName = "image" + std::to_string(i) + ".png";
+        //imwrite(fileName, imageRoi);
+
+        cv::Mat mask = CreateMask(imageRoi);
+
+        // get the furoierDescriptor and look up the class in the learned library
+        cv::Mat ft;
+        int id;
+        ft = calcFourierDescriptor(mask);
+
+        if (ft.data)
         {
-            ctrSelec.push_back(i);
+            //imshow("test", ft);
+            id = classifier(dict, ft); // returns detected gesture from dictionary
+            std::cout << std::to_string(id) << std::endl;
+        } else {
+            std::cout << std::to_string(-1) << std::endl;
         }
+
     }
-
-    cv::Mat mc = cv::Mat::zeros(m.size(), CV_8UC3);
-    std::vector<std::vector<cv::Point2d>> z;
-    std::vector<std::vector<cv::Point2d>> Z;
-
-    z.resize(ctrSelec.size());
-    Z.resize(ctrSelec.size());
-    for (int i = 0; i < ctrSelec.size(); i++)
-    {
-        std::vector<cv::Point2d> c = MatchDescriptor::ReSampleContour(contours[ctrSelec[i]], 1024);
-        for (int j = 0; j < c.size(); j++)
-            z[i].push_back(c[(j + i * 10) % c.size()]);
-        dft(z[i], Z[i], cv::DFT_SCALE | cv::DFT_REAL_OUTPUT);
-    }
-
-    int indRef = 0;
-    MatchDescriptor md;
-    md.sContour = Z[indRef];
-    md.nbDesFit = 20;
-    std::vector<float> alpha, phi, s;
-    std::vector<std::vector<Point>> ctrRotated;
-    alpha.resize(ctrSelec.size());
-    phi.resize(ctrSelec.size());
-    s.resize(ctrSelec.size());
-
-
-    // print the results
-
-    for (int i = 0; i < ctrSelec.size(); i++)
-    {
-        md.AjustementRtSafe(Z[i], alpha[i], phi[i], s[i]);
-        complex<float> expitheta = s[i] * complex<float>(cos(phi[i]), sin(phi[i]));
-        cout << "Contour " << indRef << " with " << i << " origin " << alpha[i] << " and rotated of "
-             << phi[i] * 180 / md.pi << " and scale " << s[i] << " Distance between contour is "
-             << md.Distance(expitheta, alpha[i]) << " " << endl;
-        for (int j = 1; j < Z[i].size(); j++)
-        {
-            complex<float> zr(Z[indRef][j].x, Z[indRef][j].y);
-            zr = zr * expitheta * exp(alpha[i] * md.frequence[j] * complex<float>(0, 1));
-            Z[i][j].x = zr.real();
-            Z[i][j].y = zr.imag();
-        }
-        dft(Z[i], z[i], DFT_INVERSE);
-        std::vector<Point> c;
-        for (int j = 0; j < z[i].size(); j++)
-            c.push_back(Point(z[i][j].x, z[i][j].y));
-        ctrRotated.push_back(c);
-    }
-    for (int i = 0; i < ctrSelec.size(); i++)
-    {
-        if (i != indRef)
-            drawContours(mc, contours, ctrSelec[i], Scalar(255, 0, 0));
-        else
-            drawContours(mc, contours, ctrSelec[i], Scalar(255, 255, 255));
-        putText(mc, format("%d", i), Point(Z[i][0].x, Z[i][0].y), FONT_HERSHEY_SIMPLEX, 1, Scalar(255, 0, 0));
-    }
-
-    for (int i = 0; i < ctrSelec.size(); i++)
-    {
-        drawContours(mc, ctrRotated, i, Scalar(0, 0, 255));
-    }
-
-    if (mc.data)
-        imshow("mc", mc);
-
 }
 

@@ -58,6 +58,7 @@ static void boardPrinter(std::string fen) {
     std::cout << "Next recommened move is:  TODO" <<std::endl;
 
 
+
 }
 
 int main() {
