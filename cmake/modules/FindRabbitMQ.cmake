@@ -9,7 +9,7 @@
 #   RabbitMQ_LIBS         - the lib files for RabbitMQ
 
 Include(FindModule)
-FIND_MODULE(RabbitMQ amqp.h "" "" librabbitmq.4 "" "")
+FIND_MODULE(RabbitMQ amqp.h "" "" librabbitmq.so.4 "" "")
 
 if (RabbitMQ_FOUND)
     message("found RabbitMQ")

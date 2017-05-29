@@ -4,7 +4,7 @@ project(chess_ar)
 set(CMAKE_CXX_STANDARD 11)   #C++11
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/build")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/modules/")
 
 IF (WIN32)
     set(BOOST_ROOT CACHE PATH "Root folder from Boost")
@@ -15,7 +15,7 @@ set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME    OFF)
 
 # this needs to be here so it can be accessed from all targets
-find_package(Boost 1.60.0 COMPONENTS filesystem REQUIRED)
+find_package(Boost 1.50.0 COMPONENTS filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 
