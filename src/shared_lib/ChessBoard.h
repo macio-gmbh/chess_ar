@@ -25,6 +25,7 @@ public:
      * @return
      */
     ChessBoard Chessboard();
+    
     /**
      * Receives a FEN-String of a board and converts it to a  chess board.
      * Only the current Player and the Order on the Chess board are currently stored.

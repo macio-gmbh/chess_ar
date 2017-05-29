@@ -19,7 +19,10 @@ int main() {
     ChessBoard currentBoard= ChessBoard(initialBoard);
     currentZobrist = Zobrist(initialBoard);
 
-    guiSender.Send("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    guiSender.Send("rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1");
+    guiSender.Send(currentBoard.toString().c_str());
+
+    std::string testString =  "rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
+    currentBoard=ChessBoard(testString);
+    guiSender.Send(currentBoard.toString().c_str());
     return 0;
 }
