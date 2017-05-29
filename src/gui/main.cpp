@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/lexical_cast.hpp>
+#include "../shared_lib/rabbitmq/RabbitMQReceiver.h"
 
 using namespace boost::container;
 
@@ -54,16 +55,20 @@ static void boardPrinter(std::string fen) {
         }
     }
 
-    std::cout << "Next recommened move is:  TODO";
+    std::cout << "Next recommened move is:  TODO" <<std::endl;
 
 
 }
 
 int main() {
+    RabbitMQReceiver guiReceiver("localhost", 5672, "ControllerToGui");
+
     std::cout << "Hello, World from gui!" << std::endl;
     std::cout << "--------------- This is a test output---------------" << std::endl;
     std::string testBoard = "rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    boardPrinter(testBoard);
+    while (true) {
+        boardPrinter(guiReceiver.Receive());
+    }
     return 0;
 }
 
