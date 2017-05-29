@@ -225,7 +225,7 @@ std::string ChessBoard::toString() {
         tileCtr++;
 
         //a row has ended
-        if (tileCtr % 8 == 0) {
+        if (tileCtr % 8 == 0 && tileCtr !=64) {
             fenString = fenString + "/";
         }
 
@@ -234,9 +234,9 @@ std::string ChessBoard::toString() {
 
     //current Move
     if (currentMove == ChessColor::WHITE) {
-        fenString = fenString + "  w";
+        fenString = fenString + " w";
     } else {
-        fenString = fenString + "  b";
+        fenString = fenString + " b";
     }
 
     return fenString;

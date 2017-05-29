@@ -11,9 +11,10 @@ static void boardPrinter(std::string fen) {
 
     std::cout << " ############  Current game status is:  ############" << std::endl;
     std::cout << std::endl;
-    std::cout << std::endl;
+    std::cout << fen << std::endl;
     vector<std::string> fenList;
     boost::split(fenList, fen, boost::is_any_of(" "));
+    std::cout << fenList.size()<< std::endl;
 
     std::cout << "         | ";
     for (std::string::iterator it = fenList[0].begin(); it != fenList[0].end(); ++it) {
@@ -66,7 +67,8 @@ int main() {
 
     std::cout << "Hello, World from gui!" << std::endl;
     std::cout << "--------------- This is a test output---------------" << std::endl;
-    std::string testBoard = "rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+
     while (true) {
         boardPrinter(guiReceiver.Receive());
     }
