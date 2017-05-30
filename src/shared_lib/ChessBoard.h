@@ -7,7 +7,10 @@
 
 
 #include <boost/algorithm/string.hpp>
+#include <string>
+#include <stdexcept>
 #include <boost/container/vector.hpp>
+#include <boost/lexical_cast.hpp>
 #include "ChessFigure.h"
 
 using namespace boost::container;
@@ -19,6 +22,17 @@ public:
     ChessColor currentMove = ChessColor::WHITE;
 
 
+    bool blackKingSideCastelling = true;
+    bool blackQueenSideCastelling = true;
+    bool whiteKingSideCastelling = true;
+    bool whiteQueenSideCastelling = true;
+
+    //is -1 when no enpassent. enpassent is the array index of the field
+    int_fast8_t  enpassent = -1;
+
+    uint16_t  halfMove = 0;
+
+    uint16_t  fullMove = 0;
     /**
      *
      * Default constructor
@@ -39,7 +53,9 @@ public:
 
 private:
 
+
     void emtyTileSetter(int8_t emptyTileCtr, uint8_t & runner);
+
 };
 
 
