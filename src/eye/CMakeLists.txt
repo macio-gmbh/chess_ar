@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.6)
 
+IF (WIN32)
+    set(OpenCV_FOUND 1)
+    set("OpenCV_DIR" "D:/Projekte/Cpp/opencv/build")
+endif()
 find_package(OpenCV REQUIRED)
 
 add_subdirectory(./../shared_lib shared_lib)

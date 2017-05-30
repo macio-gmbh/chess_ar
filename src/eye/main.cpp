@@ -90,7 +90,6 @@ int main()
         // make a gray image
         cv::Mat gray;
         cvtColor(camFrame, gray, cv::COLOR_RGB2GRAY);
-        //equalizeHist(gray, gray);
 
         // find the quads
         std::vector<std::vector<cv::Point> > quads = GetChessQuads(gray);
@@ -108,7 +107,7 @@ int main()
 
         // show the input image in a window
         imshow("cam", camFrame);
-        imshow("gray", gray);
+        //imshow("gray", gray);
         char key = cv::waitKey(30);
         if (key == 'c')
         {
@@ -228,13 +227,30 @@ double getPeriSum(std::vector<std::vector<cv::Point>> contours)
     return peri;
 }
 
+int computeOutput(int x, int r1, int s1, int r2, int s2)
+{
+    float result;
+    if(0 <= x && x <= r1){
+        result = s1/r1 * x;
+    }else if(r1 < x && x <= r2){
+        result = ((s2 - s1)/(r2 - r1)) * (x - r1) + s1;
+    }else if(r2 < x && x <= 255){
+        result = ((255 - s2)/(255 - r2)) * (x - r2) + s2;
+    }
+    return (int)result;
+}
+
 cv::Mat CreateMask(cv::Mat &image)
 {
     cv::Mat blurred, Morpholige, edges, img1;
     image.copyTo(img1);
 
-    //bitwise_not(imageRoi, m1);
+    bitwise_not(img1, img1);
     medianBlur(image, blurred, 3);
+
+   // Mat img_higher_contrast;
+    blurred.convertTo(blurred, -1, 2, 0); //increase the contrast (double)
+
     morphologyEx(blurred, Morpholige, cv::MorphTypes::MORPH_OPEN, NULL);
     morphologyEx(Morpholige, Morpholige, cv::MorphTypes::MORPH_CLOSE, NULL);
 
@@ -289,14 +305,13 @@ void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::v
         boundRect.width -= 4;
         boundRect.height -= 4;
         cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
+        cv::Mat mask = CreateMask(imageRoi);
 
         if (writeNextFigures)
         {
-            std::string fileName = "image" + std::to_string(i) + ".png";
-            imwrite(fileName, imageRoi);
+            imwrite("image" + std::to_string(i) + ".png", imageRoi);
+            imwrite("image" + std::to_string(i) + "_masked.png", mask);
         }
-
-        cv::Mat mask = CreateMask(imageRoi);
 
         // get the furoierDescriptor and look up the class in the learned library
         cv::Mat ft;
@@ -335,7 +350,7 @@ void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::v
         {
             std::cout << std::to_string(-1) << std::endl;
         }
-        writeNextFigures = false;
     }
+    writeNextFigures = false;
 }
 

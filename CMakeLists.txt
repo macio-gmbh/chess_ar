@@ -18,9 +18,8 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 find_package(Boost 1.50.0 COMPONENTS filesystem serialization REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
-
 # RabbitMQ C library dependency
-FIND_PACKAGE(RabbitMQ)
+FIND_PACKAGE(RabbitMQ REQUIRED)
 INCLUDE_DIRECTORIES( ${RabbitMQ_INCLUDE_DIR})
 
 add_subdirectory(src/shared_lib)
