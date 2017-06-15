@@ -2,21 +2,20 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
+#include <opencv2/ml.hpp>
 
+#include "./EyeUtils.h"
 #include "./FourierDescriptor.h"
 #include "../shared_lib/rabbitmq/RabbitMQSender.h"
 #include "../shared_lib/ChessBoard.h"
 
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/utility.hpp>
-#include "cvmat_serialization.h"
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/filesystem.hpp>
 
 const bool USE_STATIC_IMAGE = false;
 
 double minPeri = 200;
-double maxPeri = 450;
+double maxPeri = 288;
 double periScale = 0.05;
 std::vector<std::pair<cv::Mat, int>> dict;
 bool writeNextFigures = false;
@@ -24,24 +23,21 @@ bool writeNextFigures = false;
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
-void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours);
+void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours,
+                   cv::ml::SVM *svm);
 
 int main()
 {
-    if (!boost::filesystem::exists("dict.bin"))
+    Ptr<cv::ml::SVM> svm;
+
+    if (!boost::filesystem::exists("model4.yml"))
     {
-        std::cout << "Can't find the directory, starting without piece recognition" << std::endl;
+        std::cout << "Can't find the SVM Training file, starting without piece recognition" << std::endl;
     }
     else
     {
-        // load the dictionary
-        std::ifstream ifs("dict.bin", std::ios::binary);
-        { // use scope to ensure archive goes out of scope before stream
-            boost::archive::binary_iarchive ia(ifs);
-            ia >> dict;
-
-        }
-        ifs.close();
+        svm = svm->load("model4.yml");
+        std::cout << "Var count: " << svm->getVarCount() << std::endl;
     }
 
     RabbitMQSender sender("localhost", 5672, "EyeToController");
@@ -98,7 +94,7 @@ int main()
         DrawConotursRandomColor(camFrame, quads);
 
         // find the figures
-        DetectFigures(camFrame, gray, quads);
+        DetectFigures(camFrame, gray, quads, svm);
 
         // recreate the chessboard
 
@@ -122,6 +118,9 @@ int main()
             break;
         }
     }
+
+    svm.release();
+
     return 0;
 }
 
@@ -130,11 +129,11 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
     // first: find the hough lines and draw em in a seperate mat
     cv::Mat edges;
     cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
-    Canny(grayImage, edges, 100, 515, 3);
+    Canny(grayImage, edges, 50, 515, 3);
 
     std::vector<cv::Vec2f> lines;
     // detect lines
-    HoughLines(edges, lines, 1.25, CV_PI / 180, 150);
+    HoughLines(edges, lines, 0.89, 1.56, 61);
 
     // draw the lines in a seperate mat for better rectangle finding
     for (size_t i = 0; i < lines.size(); i++)
@@ -230,64 +229,31 @@ double getPeriSum(std::vector<std::vector<cv::Point>> contours)
 int computeOutput(int x, int r1, int s1, int r2, int s2)
 {
     float result;
-    if(0 <= x && x <= r1){
-        result = s1/r1 * x;
-    }else if(r1 < x && x <= r2){
-        result = ((s2 - s1)/(r2 - r1)) * (x - r1) + s1;
-    }else if(r2 < x && x <= 255){
-        result = ((255 - s2)/(255 - r2)) * (x - r2) + s2;
+    if (0 <= x && x <= r1)
+    {
+        result = s1 / r1 * x;
     }
-    return (int)result;
+    else if (r1 < x && x <= r2)
+    {
+        result = ((s2 - s1) / (r2 - r1)) * (x - r1) + s1;
+    }
+    else if (r2 < x && x <= 255)
+    {
+        result = ((255 - s2) / (255 - r2)) * (x - r2) + s2;
+    }
+    return (int) result;
 }
 
-cv::Mat CreateMask(cv::Mat &image)
+void MergeMatrixVector(Mat &mat, std::vector<cv::Mat> &vector)
 {
-    cv::Mat blurred, Morpholige, edges, img1;
-    image.copyTo(img1);
-
-    bitwise_not(img1, img1);
-    medianBlur(image, blurred, 3);
-
-   // Mat img_higher_contrast;
-    blurred.convertTo(blurred, -1, 2, 0); //increase the contrast (double)
-
-    morphologyEx(blurred, Morpholige, cv::MorphTypes::MORPH_OPEN, NULL);
-    morphologyEx(Morpholige, Morpholige, cv::MorphTypes::MORPH_CLOSE, NULL);
-
-    double minThreshold = 100;
-    double maxThreshold = 200;
-    int apertureSize = 3;
-
-    // detect edges
-    Canny(Morpholige, edges, minThreshold, maxThreshold, apertureSize);
-
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Vec4i> hierarchy;
-
-    //threshold(m1, mThresh, 125, 255, cv::THRESH_BINARY);
-    //findContours(edges, contours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-
-    findContours(edges, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-
-    // you could also reuse img1 here
-    cv::Mat mask = cv::Mat::zeros(img1.rows, img1.cols, CV_8UC1);
-
-    // CV_FILLED fills the connected components found
-    drawContours(mask, contours, -1, cv::Scalar(255), CV_FILLED);
-
-    cv::Mat kernel = getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(11, 11));
-    morphologyEx(mask, mask, cv::MorphTypes::MORPH_CLOSE, kernel);
-
-    //imshow("Display Image", edges);
-
-//    if (mask.data)
-    //      imshow("contours", mask);
-
-
-    return mask;
+    for (int i = 0; i < vector.size(); i++)
+    {
+        vector[i].copyTo(mat.row(i));
+    }
 }
 
-void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::vector<cv::Point>> chessContours)
+void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours,
+                   cv::ml::SVM *svm)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
@@ -296,61 +262,85 @@ void DetectFigures(cv::Mat originalImage, cv::Mat inputImage, std::vector<std::v
     //cv::Mat inputCopy = cv::imread("scene2.jpg", CV_LOAD_IMAGE_GRAYSCALE);
     inputImage.copyTo(inputCopy);
 
+    std::vector<cv::Mat> cells;
+    std::vector<cv::Rect> cellsRect;
+
+    // use the same size
+    int rectSize = 60;
+
     for (int i = 0; i < chessContours.size(); ++i)
     {
         // seperate the figure fromt he rest
         cv::Rect boundRect = boundingRect(Mat(chessContours[i]));
         boundRect.x += 2;
         boundRect.y += 4;
-        boundRect.width -= 4;
-        boundRect.height -= 4;
+        boundRect.width = rectSize;
+        boundRect.height = rectSize;
         cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
-        cv::Mat mask = CreateMask(imageRoi);
+        cv::Mat mask = EyeUtils::GetThresholdImage(imageRoi);
+
+        cv::Mat descriptor = EyeUtils::GetDescriptor(mask);
+        cells.push_back(descriptor);
+        cellsRect.push_back(boundRect);
 
         if (writeNextFigures)
         {
             imwrite("image" + std::to_string(i) + ".png", imageRoi);
             imwrite("image" + std::to_string(i) + "_masked.png", mask);
         }
+    }
 
-        // get the furoierDescriptor and look up the class in the learned library
-        cv::Mat ft;
-        int id;
-        ft = calcFourierDescriptor(mask);
+    Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
+    MergeMatrixVector(mergedMat, cells);
 
-        if (ft.data)
+    if (svm->isTrained() && mergedMat.data && svm->getVarCount() == mergedMat.cols)
+    {
+        Mat svmResponse;
+        svm->predict(mergedMat, svmResponse);
+        std::string figureName = "";
+
+        for (int i = 0; i < svmResponse.rows; i++)
         {
-            //imshow("test", ft);
-            id = classifier(dict, ft); // returns detected gesture from dictionary
-            std::string figureName = "";
 
-            switch (id)
+            int id = round(svmResponse.at<float>(0, i));
+            std::cout << id << std::endl;
+
+            try
             {
-            case 1:figureName = "King";
-                break;
-            case 2:figureName = "QUEEN";
-                break;
-            case 3:figureName = "ROOK";
-                break;
-            case 4:figureName = "BISHOP";
-                break;
-            case 5:figureName = "KNIGHT";
-                break;
-            case 6:figureName = "PAWN";
-                break;
+                cv::Rect boundRect = cellsRect.at(i);
+
+                switch (id)
+                {
+                case KING:figureName = "King";
+                    break;
+                case QUEEN:figureName = "QUEEN";
+                    break;
+                case ROOK:figureName = "ROOK";
+                    break;
+                case BISHOP:figureName = "BISHOP";
+                    break;
+                case KNIGHT:figureName = "KNIGHT";
+                    break;
+                case PAWN:figureName = "PAWN";
+                    break;
+                }
+
+                std::cout << std::to_string(id) << std::endl;
+
+                putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
+                    .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+            }
+            catch (const std::out_of_range &ex)
+            {
+                std::cerr << "Out of Range error: " << ex.what() << '\n';
             }
 
-            std::cout << std::to_string(id) << std::endl;
-
-            putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
-                .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
-
-        }
-        else
-        {
-            std::cout << std::to_string(-1) << std::endl;
         }
     }
+    else
+    {
+        //std::cout << "No data " << std::endl;
+    }
+
     writeNextFigures = false;
 }
-
