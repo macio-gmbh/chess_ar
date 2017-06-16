@@ -72,18 +72,12 @@ void train(std::string target_path, std::vector<std::pair<Mat, int>> &dict, int 
     }
 }
 
-void loadTrainTestLabel(std::string const &pathName, int label, vector<Mat> &trainCells, vector<Mat> &testCells,
-                        vector<int> &trainLabels, vector<int> &testLabels)
+void LoadImageDescriptors(std::string const &pathName, vector<Mat> &trainCells)
 {
-
     // load all files from the given path
     boost::filesystem::directory_iterator end_itr; // Default ctor yields past-the-end
-    int currentIndex = 0;
     for (boost::filesystem::directory_iterator i(pathName); i != end_itr; ++i)
     {
-        // use every 3rd picture as test
-        //bool useAsTest = (currentIndex % 3) == 0;
-
         // load it and create an edge image
         //Mat img = imread(pathName, CV_LOAD_IMAGE_GRAYSCALE);
         Mat matExC1 = imread((*i).path().string(), CV_8UC1);
@@ -100,20 +94,8 @@ void loadTrainTestLabel(std::string const &pathName, int label, vector<Mat> &tra
 
         cv::Mat descriptor;
         descriptor = EyeUtils::GetDescriptor(edges);
-//
-//        if (!useAsTest)
-//        {
+
         trainCells.push_back(descriptor);
-        trainLabels.push_back(label);
-//        }
-//        else
-//        {
-        testCells.push_back(descriptor);
-        testLabels.push_back(label);
-//        }
-        currentIndex++;
-        if (currentIndex > 4)
-            break;
     }
 }
 
@@ -182,22 +164,20 @@ void getSVMParams(SVM *svm)
     cout << "Gamma           : " << svm->getGamma() << endl;
 }
 
-void SVMtrain(Mat &trainMat, vector<int> &trainLabels, Mat &testResponse, Mat &testMat)
+void SVMtrain(Mat &trainMat, vector<int> &trainLabels, Mat &testResponse, Mat &testMat, std::string const &savePath)
 {
     Ptr<SVM> svm = SVM::create();
     //svm->setGamma(0.6);
     //svm->setC(10);
-    svm->setKernel(SVM::LINEAR);
+    svm->setKernel(SVM::LINEAR );
     svm->setType(SVM::C_SVC);
     Ptr<TrainData> td = TrainData::create(trainMat, ROW_SAMPLE, trainLabels);
     //svm->train(td);
     svm->trainAuto(td);
-
-    svm->save("model4.yml");
-
+    svm->save(savePath);
     svm->predict(testMat, testResponse);
 
-    getSVMParams(svm);
+    //getSVMParams(svm);
 }
 
 void SVMevaluate(Mat &testResponse, float &count, float &accuracy, vector<int> &testLabels)
@@ -213,59 +193,84 @@ void SVMevaluate(Mat &testResponse, float &count, float &accuracy, vector<int> &
     accuracy = (count / testResponse.rows) * 100;
 }
 
-void MergeMatrixVector(Mat &mat, vector<Mat> &vector)
+void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
+               std::initializer_list<std::vector<Mat>> const &otherClasses)
 {
-    for (int i = 0; i < vector.size(); i++)
-    {
-        vector[i].copyTo(mat.row(i));
-    }
-}
-
-int main()
-{
-    std::vector<std::pair<Mat, int>> dict;
-
-    namespace fs = boost::filesystem;
-
-    vector<Mat> trainCells;
-    vector<Mat> testCells;
-    vector<int> trainLabels;
-    vector<int> testLabels;
-
-    loadTrainTestLabel("chessBoard/king/", 1, trainCells, testCells, trainLabels, testLabels);
-    loadTrainTestLabel("chessBoard/pawn/", 6, trainCells, testCells, trainLabels, testLabels);
-    loadTrainTestLabel("chessBoard/bishop/", 4, trainCells, testCells, trainLabels, testLabels);
-    loadTrainTestLabel("chessBoard/knight/", 5, trainCells, testCells, trainLabels, testLabels);
-    loadTrainTestLabel("chessBoard/rook/", 3, trainCells, testCells, trainLabels, testLabels);
-    loadTrainTestLabel("chessBoard/queen/", 2, trainCells, testCells, trainLabels, testLabels);
-    loadTrainTestLabel("chessBoard/empty/", -1, trainCells, testCells, trainLabels, testLabels);
-
-//    std::vector<std::vector<float> > trainHOG;
-//    std::vector<std::vector<float> > testHOG;
-//    CreateTrainTestHOG(trainHOG, testHOG, trainCells, testCells);
-//
-//    int descriptor_size = trainHOG[0].size();
-//    cout << "Descriptor Size : " << descriptor_size << endl;
-//
-//    Mat trainMat(trainHOG.size(), descriptor_size, CV_32FC1);
-//    Mat testMat(testHOG.size(), descriptor_size, CV_32FC1);
-//
-//    ConvertVectortoMatrix(trainHOG, testHOG, trainMat, testMat);
-
-    Mat trainMat(trainCells.size(), trainCells[0].cols, CV_32FC1);
-    Mat testMat(testCells.size(), testCells[0].cols, CV_32FC1);
-
-    MergeMatrixVector(trainMat, trainCells);
-    MergeMatrixVector(testMat, testCells);
-
     Mat testResponse;
-    SVMtrain(trainMat, trainLabels, testResponse, testMat);
+    vector<Mat> completeSet;
+    vector<int> completeLabels;
+
+    for (auto currMat: firstClass)
+    {
+        completeSet.push_back(currMat);
+        completeLabels.push_back(1);
+    }
+    for (auto elem : otherClasses)
+    {
+        for (auto currMat: elem)
+        {
+            completeSet.push_back(currMat);
+            completeLabels.push_back(0);
+        }
+    }
+
+    // split the data into training and test data
+//    std::size_t const half_size = completeSet.size() / 2;
+//    std::vector<Mat> trainingData(completeSet.begin(), completeSet.begin() + half_size);
+//    std::vector<Mat> testData(completeSet.begin() + half_size, completeSet.end());
+//
+//    std::vector<int> trainingLabels(completeLabels.begin(), completeLabels.begin() + half_size);
+//    std::vector<int> testLabels(completeLabels.begin() + half_size, completeLabels.end());
+
+
+    // dont split
+    std::vector<Mat> trainingData = completeSet;
+    std::vector<Mat> testData = completeSet;
+
+    std::vector<int> trainingLabels = completeLabels;
+    std::vector<int> testLabels = completeLabels;
+
+    // convert it into a single Mat
+    Mat trainMat(completeSet.size(), completeSet[0].cols, CV_32FC1);
+    Mat testMat(completeSet.size(), completeSet[0].cols, CV_32FC1);
+    EyeUtils::MergeMatrixVector(trainMat, trainingData);
+    EyeUtils::MergeMatrixVector(testMat, testData);
+
+    SVMtrain(trainMat, completeLabels, testResponse, testMat, savePath);
 
     float count = 0;
     float accuracy = 0;
     SVMevaluate(testResponse, count, accuracy, testLabels);
+    cout << savePath << ": the accuracy is :" << accuracy << endl;
+}
 
-    cout << "the accuracy is :" << accuracy << endl;
+int main()
+{
+    vector<Mat> kingDescritpors, pawnDescritpors, emptyDescritpors, queenDescritpors, rookDescritpors,
+        bishopDescritpors, knightDescritpors;
+
+    //LoadImageDescriptors("chessBoard/empty/", emptyDescritpors);
+    LoadImageDescriptors("chessBoard/king/", kingDescritpors);
+    LoadImageDescriptors("chessBoard/queen/", queenDescritpors);
+    LoadImageDescriptors("chessBoard/rook/", rookDescritpors);
+    LoadImageDescriptors("chessBoard/bishop/", bishopDescritpors);
+    LoadImageDescriptors("chessBoard/knight/", knightDescritpors);
+    LoadImageDescriptors("chessBoard/pawn/", pawnDescritpors);
+
+    // one vs Rest
+    CreateSVM("king.yml", kingDescritpors, {queenDescritpors, rookDescritpors, bishopDescritpors,
+                                            knightDescritpors, pawnDescritpors, emptyDescritpors});
+    CreateSVM("queen.yml", queenDescritpors, {kingDescritpors, rookDescritpors, bishopDescritpors,
+                                              knightDescritpors, pawnDescritpors, emptyDescritpors});
+    CreateSVM("rook.yml", rookDescritpors, {kingDescritpors, queenDescritpors, bishopDescritpors,
+                                            knightDescritpors, pawnDescritpors, emptyDescritpors});
+    CreateSVM("bishop.yml", bishopDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors,
+                                                knightDescritpors, pawnDescritpors, emptyDescritpors});
+    CreateSVM("knight.yml", knightDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
+                                                pawnDescritpors, emptyDescritpors});
+    CreateSVM("pawn.yml", pawnDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
+                                            knightDescritpors, emptyDescritpors});
+
     return 0;
 
 }

@@ -20,25 +20,27 @@ double periScale = 0.05;
 std::vector<std::pair<cv::Mat, int>> dict;
 bool writeNextFigures = false;
 
+Ptr<cv::ml::SVM> bishopSvm;
+Ptr<cv::ml::SVM> knightSvm;
+Ptr<cv::ml::SVM> pawnSvm;
+Ptr<cv::ml::SVM> queenSvm;
+Ptr<cv::ml::SVM> rookSvm;
+Ptr<cv::ml::SVM> kingSvm;
+
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
-void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours,
-                   cv::ml::SVM *svm);
+void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours);
 
 int main()
 {
-    Ptr<cv::ml::SVM> svm;
 
-    if (!boost::filesystem::exists("model4.yml"))
-    {
-        std::cout << "Can't find the SVM Training file, starting without piece recognition" << std::endl;
-    }
-    else
-    {
-        svm = svm->load("model4.yml");
-        std::cout << "Var count: " << svm->getVarCount() << std::endl;
-    }
+    bishopSvm = bishopSvm->load("bishop.yml");
+    knightSvm = knightSvm->load("knight.yml");
+    pawnSvm = pawnSvm->load("pawn.yml");
+    queenSvm = queenSvm->load("queen.yml");
+    rookSvm = rookSvm->load("rook.yml");
+    kingSvm = kingSvm->load("king.yml");
 
     RabbitMQSender sender("localhost", 5672, "EyeToController");
 
@@ -94,7 +96,7 @@ int main()
         DrawConotursRandomColor(camFrame, quads);
 
         // find the figures
-        DetectFigures(camFrame, gray, quads, svm);
+        DetectFigures(camFrame, gray, quads);
 
         // recreate the chessboard
 
@@ -119,7 +121,12 @@ int main()
         }
     }
 
-    svm.release();
+    bishopSvm.release();
+    knightSvm.release();
+    pawnSvm.release();
+    queenSvm.release();
+    rookSvm.release();
+    kingSvm.release();
 
     return 0;
 }
@@ -252,8 +259,14 @@ void MergeMatrixVector(Mat &mat, std::vector<cv::Mat> &vector)
     }
 }
 
-void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours,
-                   cv::ml::SVM *svm)
+bool AreSvmsTrained()
+{
+    return bishopSvm->isTrained() && knightSvm->isTrained() && pawnSvm->isTrained() &&
+           queenSvm->isTrained() && rookSvm->isTrained() && kingSvm->isTrained();
+
+}
+
+void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours)
 {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
@@ -293,39 +306,49 @@ void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std:
     Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
     MergeMatrixVector(mergedMat, cells);
 
-    if (svm->isTrained() && mergedMat.data && svm->getVarCount() == mergedMat.cols)
+    if (AreSvmsTrained() && mergedMat.data)
     {
-        Mat svmResponse;
-        svm->predict(mergedMat, svmResponse);
-        std::string figureName = "";
+        Mat bishopResponse, knightResponse, pawnResponse, queenResponse,
+            rookResponse, kingResponse;
 
-        for (int i = 0; i < svmResponse.rows; i++)
+        bishopSvm->predict(mergedMat, bishopResponse);
+        knightSvm->predict(mergedMat, knightResponse);
+        pawnSvm->predict(mergedMat, pawnResponse);
+        queenSvm->predict(mergedMat, queenResponse);
+        rookSvm->predict(mergedMat, rookResponse);
+        kingSvm->predict(mergedMat, kingResponse);
+
+        int responseLength = bishopResponse.rows;
+
+        for (int i = 0; i < responseLength; i++)
         {
-
-            int id = round(svmResponse.at<float>(0, i));
-            std::cout << id << std::endl;
 
             try
             {
+
+                std::string figureName = "";
+
+                int isBishop = round(bishopResponse.at<float>(i, 0));
+                int isKnight = round(knightResponse.at<float>(i, 0));
+                bool isPawn = round(pawnResponse.at<float>(i, 0));
+                bool isQueen = round(queenResponse.at<float>(i, 0));
+                bool isRook = round(rookResponse.at<float>(i, 0));
+                bool isKing = round(kingResponse.at<float>(i, 0));
+
                 cv::Rect boundRect = cellsRect.at(i);
 
-                switch (id)
-                {
-                case KING:figureName = "King";
-                    break;
-                case QUEEN:figureName = "QUEEN";
-                    break;
-                case ROOK:figureName = "ROOK";
-                    break;
-                case BISHOP:figureName = "BISHOP";
-                    break;
-                case KNIGHT:figureName = "KNIGHT";
-                    break;
-                case PAWN:figureName = "PAWN";
-                    break;
-                }
-
-                std::cout << std::to_string(id) << std::endl;
+                if (isKing)
+                    figureName = "KING";
+                if (isQueen)
+                    figureName = "QUEEN";
+                if (isRook)
+                    figureName = "ROOK";
+                if (isBishop)
+                    figureName = "BISHOP";
+                if (isKnight)
+                    figureName = "KNIGHT";
+                if (isPawn)
+                    figureName = "PAWN";
 
                 putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
                     .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
