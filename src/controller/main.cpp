@@ -1,19 +1,21 @@
 #include <iostream>
-#include "../shared_lib/ChessBoard.h"
-#include "../shared_lib/Zobrist.h"
-#include "../shared_lib/rabbitmq/RabbitMQSender.h"
-#include "../shared_lib/rabbitmq/RabbitMQReceiver.h"
-
-// Includes required for SO example: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
 #include <cstdio>
 #include <memory>
 #include <stdexcept>
 #include <string>
 #include <array>
 
+#include "../shared_lib/ChessBoard.h"
+#include "../shared_lib/Zobrist.h"
+#include "../shared_lib/rabbitmq/RabbitMQSender.h"
+#include "../shared_lib/rabbitmq/RabbitMQReceiver.h"
+
+
+
 Zobrist currentZobrist;
 
 // source: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
+// Includes required for SO example: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
 std::string exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
@@ -26,16 +28,22 @@ std::string exec(const char* cmd) {
     return result;
 }
 
-int pipeTest() {
+std::string askStockfishForBestMove(const char* fen) {
     std::string cmd = "stockfish << EOF\n";
     cmd += "setoption name Hash value 128\n";
     cmd += "setoption name threads value 1\n";
     cmd += "setoption name Contempt Factor value 50\n";
-    cmd += "position fen r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3\n";
+    cmd += "position fen ";
+    cmd += fen;
+    cmd += "\n";
     cmd += "go movetime 1999\n";
     cmd += "EOF";
-    std::cout << exec(cmd.c_str()) << std::endl;
-    return 0;
+    std::string res = exec(cmd.c_str());
+    std::size_t pos = res.find("bestmove");
+
+    res = res.substr (pos);
+
+    return res;
 }
 
 int main() {
@@ -57,7 +65,9 @@ int main() {
     currentZobrist = Zobrist(initialBoard);
 
     std::cout<< "toString Test:      " << currentTestBoard.toString() <<std::endl;
- //   guiSender.Send(currentBoard.toString().);
+    std::string sendStr = currentBoard.toString()+ " " +askStockfishForBestMove(currentTestBoard.toString().c_str());
+    std::cout<< "sendStr Test:      " << sendStr <<std::endl;
+    guiSender.Send(sendStr.c_str());
 
 //    std::string testString =  "rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
 //
@@ -73,5 +83,5 @@ int main() {
 //            guiSender.Send(currentBoard.toString().c_str());
 //        }
 //    }
-    return pipeTest();
+    return 0;
 }
