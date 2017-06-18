@@ -8,6 +8,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <string>
+#include <array>
 #include <stdexcept>
 #include <boost/container/vector.hpp>
 #include <boost/lexical_cast.hpp>
@@ -16,7 +17,7 @@
 using namespace boost::container;
 class ChessBoard {
 public:
-    ChessFigure board[64];
+    std::array<ChessFigure,64>  board;
 
     //default to white, since it is the starting color
     ChessColor currentMove = ChessColor::WHITE;
@@ -47,6 +48,21 @@ public:
      */
 
     ChessBoard(std::string&  fen);
+
+    /**
+    * Receives an array of Chess figures
+     * @param board Is a string in fen Notation
+    */
+    ChessBoard Chessboard(
+            std::array<ChessFigure,64>  &newBoard,
+            ChessColor curMove,
+            bool newblackKingSideCastelling ,
+            bool newblackQueenSideCastelling ,
+            bool newwhiteKingSideCastelling ,
+            bool newwhiteQueenSideCastelling ,
+            int_fast8_t  newenpassent,
+            uint16_t  newhalfMove,
+            uint16_t  newfullMove);
 
 
     std::string toString();

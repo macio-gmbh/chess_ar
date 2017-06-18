@@ -21,74 +21,74 @@ ChessBoard::ChessBoard(std::string &fen){
 
         switch (currentLetter) {
             case 'p' : {
-                board[iArray].color = ChessColor::BLACK;
-                board[iArray].figure_type = FigureType::PAWN;
+               board.at(iArray).color = ChessColor::BLACK;
+               board.at(iArray).figure_type = FigureType::PAWN;
                 iArray += 1;
                 break;
             }
             case 'r' : {
-                board[iArray].color = ChessColor::BLACK;
-                board[iArray].figure_type = FigureType::ROOK;
+               board.at(iArray).color = ChessColor::BLACK;
+               board.at(iArray).figure_type = FigureType::ROOK;
                 iArray += 1;
                 break;
             }
             case 'n' : {
-                board[iArray].color = ChessColor::BLACK;
-                board[iArray].figure_type = FigureType::KNIGHT;
+               board.at(iArray).color = ChessColor::BLACK;
+               board.at(iArray).figure_type = FigureType::KNIGHT;
                 iArray += 1;
                 break;
             }
             case 'b' : {
-                board[iArray].color = ChessColor::BLACK;
-                board[iArray].figure_type = FigureType::BISHOP;
+               board.at(iArray).color = ChessColor::BLACK;
+               board.at(iArray).figure_type = FigureType::BISHOP;
                 iArray += 1;
                 break;
             }
             case 'q' : {
-                board[iArray].color = ChessColor::BLACK;
-                board[iArray].figure_type = FigureType::QUEEN;
+               board.at(iArray).color = ChessColor::BLACK;
+               board.at(iArray).figure_type = FigureType::QUEEN;
                 iArray += 1;
                 break;
             }
             case 'k' : {
-                board[iArray].color = ChessColor::BLACK;
-                board[iArray].figure_type = FigureType::KING;
+               board.at(iArray).color = ChessColor::BLACK;
+               board.at(iArray).figure_type = FigureType::KING;
                 iArray += 1;
                 break;
             }
             case 'P' : {
-                board[iArray].color = ChessColor::WHITE;
-                board[iArray].figure_type = FigureType::PAWN;
+               board.at(iArray).color = ChessColor::WHITE;
+               board.at(iArray).figure_type = FigureType::PAWN;
                 iArray += 1;
                 break;
             }
             case 'R' : {
-                board[iArray].color = ChessColor::WHITE;
-                board[iArray].figure_type = FigureType::ROOK;
+               board.at(iArray).color = ChessColor::WHITE;
+               board.at(iArray).figure_type = FigureType::ROOK;
                 iArray += 1;
                 break;
             }
             case 'N' : {
-                board[iArray].color = ChessColor::WHITE;
-                board[iArray].figure_type = FigureType::KNIGHT;
+               board.at(iArray).color = ChessColor::WHITE;
+               board.at(iArray).figure_type = FigureType::KNIGHT;
                 iArray += 1;
                 break;
             }
             case 'B' : {
-                board[iArray].color = ChessColor::WHITE;
-                board[iArray].figure_type = FigureType::BISHOP;
+               board.at(iArray).color = ChessColor::WHITE;
+               board.at(iArray).figure_type = FigureType::BISHOP;
                 iArray += 1;
                 break;
             }
             case 'Q' : {
-                board[iArray].color = ChessColor::WHITE;
-                board[iArray].figure_type = FigureType::QUEEN;
+               board.at(iArray).color = ChessColor::WHITE;
+               board.at(iArray).figure_type = FigureType::QUEEN;
                 iArray += 1;
                 break;
             }
             case 'K' : {
-                board[iArray].color = ChessColor::WHITE;
-                board[iArray].figure_type = FigureType::KING;
+               board.at(iArray).color = ChessColor::WHITE;
+               board.at(iArray).figure_type = FigureType::KING;
                 iArray += 1;
                 break;
             }
@@ -236,6 +236,25 @@ ChessBoard::ChessBoard(std::string &fen){
 
 }
 
+ChessBoard ChessBoard::Chessboard(std::array<ChessFigure, 64> &newBoard, ChessColor curMove,
+                                  bool newblackKingSideCastelling, bool newblackQueenSideCastelling,
+                                  bool newwhiteKingSideCastelling, bool newwhiteQueenSideCastelling, int_fast8_t newenpassent,
+                                  uint16_t newhalfMove, uint16_t newfullMove) {
+    board = newBoard;
+    currentMove = curMove;
+    blackKingSideCastelling = newblackKingSideCastelling;
+    blackQueenSideCastelling= newblackQueenSideCastelling;
+    whiteKingSideCastelling = newwhiteKingSideCastelling;
+    whiteQueenSideCastelling = newwhiteQueenSideCastelling;
+    enpassent = newenpassent;
+    halfMove = newhalfMove ;
+    fullMove = newfullMove;
+
+}
+
+
+
+
 std::string ChessBoard::toString() {
 
     int8_t emptyCtr = 0;
@@ -244,9 +263,9 @@ std::string ChessBoard::toString() {
 
     while (tileCtr < 64) {
 
-        switch (board[tileCtr].figure_type) {
+        switch (board.at(tileCtr).figure_type) {
             case FigureType::PAWN : {
-                if (board[tileCtr].color == ChessColor::BLACK) {
+                if (board.at(tileCtr).color == ChessColor::BLACK) {
                     fenString = fenString + "p";
                 } else {
                     fenString = fenString + "P";
@@ -254,7 +273,7 @@ std::string ChessBoard::toString() {
                 break;
             }
             case FigureType::ROOK : {
-                if (board[tileCtr].color == ChessColor::BLACK) {
+                if (board.at(tileCtr).color == ChessColor::BLACK) {
                     fenString = fenString + "r";
                 } else {
                     fenString = fenString + "R";
@@ -262,7 +281,7 @@ std::string ChessBoard::toString() {
                 break;
             }
             case FigureType::KNIGHT : {
-                if (board[tileCtr].color == ChessColor::BLACK) {
+                if (board.at(tileCtr).color == ChessColor::BLACK) {
                     fenString = fenString + "n";
                 } else {
                     fenString = fenString + "N";
@@ -270,7 +289,7 @@ std::string ChessBoard::toString() {
                 break;
             }
             case FigureType::BISHOP : {
-                if (board[tileCtr].color == ChessColor::BLACK) {
+                if (board.at(tileCtr).color == ChessColor::BLACK) {
                     fenString = fenString + "b";
                 } else {
                     fenString = fenString + "B";
@@ -278,7 +297,7 @@ std::string ChessBoard::toString() {
                 break;
             }
             case FigureType::QUEEN : {
-                if (board[tileCtr].color == ChessColor::BLACK) {
+                if (board.at(tileCtr).color == ChessColor::BLACK) {
                     fenString = fenString + "q";
                 } else {
                     fenString = fenString + "Q";
@@ -286,7 +305,7 @@ std::string ChessBoard::toString() {
                 break;
             }
             case FigureType::KING : {
-                if (board[tileCtr].color == ChessColor::BLACK) {
+                if (board.at(tileCtr).color == ChessColor::BLACK) {
                     fenString = fenString + "k";
                 } else {
                     fenString = fenString + "K";
@@ -298,7 +317,7 @@ std::string ChessBoard::toString() {
                 emptyCtr++;
 
                 if (emptyCtr <= 8 && ((tileCtr == 63)
-                                      || (!board[tileCtr + 1].figure_type == FigureType::EMPTY) ||
+                                      || (!board.at(tileCtr + 1).figure_type == FigureType::EMPTY) ||
                                       (tileCtr + 1) % 8 == 0)) {
                     fenString = fenString + std::to_string(emptyCtr);
                     emptyCtr = 0;
@@ -406,8 +425,8 @@ std::string ChessBoard::toString() {
 void ChessBoard::emtyTileSetter(int8_t emptyTileCtr, uint8_t &runner) {
 
     for (int8_t i = 0; i < emptyTileCtr; i++) {
-        board[runner].color = ChessColor::NONE;
-        board[runner].figure_type = FigureType::EMPTY;
+        board.at(runner).color = ChessColor::NONE;
+        board.at(runner).figure_type = FigureType::EMPTY;
         runner++;
     }
 
