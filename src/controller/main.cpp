@@ -4,9 +4,39 @@
 #include "../shared_lib/rabbitmq/RabbitMQSender.h"
 #include "../shared_lib/rabbitmq/RabbitMQReceiver.h"
 
+// Includes required for SO example: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
 
 Zobrist currentZobrist;
 
+// source: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != NULL)
+            result += buffer.data();
+    }
+    return result;
+}
+
+int pipeTest() {
+    std::string cmd = "stockfish << EOF\n";
+    cmd += "setoption name Hash value 128\n";
+    cmd += "setoption name threads value 1\n";
+    cmd += "setoption name Contempt Factor value 50\n";
+    cmd += "position fen r1bqkbnr/pp1ppppp/2n5/2p5/3PP3/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 3\n";
+    cmd += "go movetime 1999\n";
+    cmd += "EOF";
+    std::cout << exec(cmd.c_str()) << std::endl;
+    return 0;
+}
 
 int main() {
 
@@ -43,5 +73,5 @@ int main() {
 //            guiSender.Send(currentBoard.toString().c_str());
 //        }
 //    }
-    return 0;
+    return pipeTest();
 }
