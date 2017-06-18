@@ -3,9 +3,9 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/ml.hpp>
+#include <opencv2/video.hpp>
 
 #include "./EyeUtils.h"
-#include "./FourierDescriptor.h"
 #include "../shared_lib/rabbitmq/RabbitMQSender.h"
 #include "../shared_lib/ChessBoard.h"
 
@@ -14,10 +14,19 @@
 
 const bool USE_STATIC_IMAGE = false;
 
-double minPeri = 200;
+// chessboard detection
+double cannyThreshold1 = 50;
+double cannyThreshold2 = 515;
+
+double houghLinesRho = 0.89;
+double houghLinesTheta = 1.566;
+double houghLinesThreshold = 61;
+
+// quad detection
+double minPeri = 220;
 double maxPeri = 288;
 double periScale = 0.05;
-std::vector<std::pair<cv::Mat, int>> dict;
+
 bool writeNextFigures = false;
 
 Ptr<cv::ml::SVM> bishopSvm;
@@ -26,26 +35,29 @@ Ptr<cv::ml::SVM> pawnSvm;
 Ptr<cv::ml::SVM> queenSvm;
 Ptr<cv::ml::SVM> rookSvm;
 Ptr<cv::ml::SVM> kingSvm;
+Ptr<cv::ml::SVM> blackSvm;
+
 
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
-void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours);
+void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours);
 
 int main()
 {
-
     bishopSvm = bishopSvm->load("bishop.yml");
     knightSvm = knightSvm->load("knight.yml");
     pawnSvm = pawnSvm->load("pawn.yml");
     queenSvm = queenSvm->load("queen.yml");
     rookSvm = rookSvm->load("rook.yml");
     kingSvm = kingSvm->load("king.yml");
+    blackSvm = blackSvm->load("black.yml");
 
     RabbitMQSender sender("localhost", 5672, "EyeToController");
 
     std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     ChessBoard currentBoard = ChessBoard(initialBoard);
+    ChessFigure board[64];
 
     cv::VideoCapture capture(1);
     cv::Mat camFrame;
@@ -57,7 +69,7 @@ int main()
     {
         std::cout << "cannot open camera, using the static image \n";
         staticImage = true;
-        chessImage = cv::imread("chessBoard/chess.png", 1);
+        chessImage = cv::imread("../train/chessBoard/chess.png", 1);
 
         if (!chessImage.data)
         {
@@ -88,15 +100,29 @@ int main()
         // make a gray image
         cv::Mat gray;
         cvtColor(camFrame, gray, cv::COLOR_RGB2GRAY);
+        std::vector<std::vector<cv::Point> > quads;
 
-        // find the quads
-        std::vector<std::vector<cv::Point> > quads = GetChessQuads(gray);
+        try
+        {
+            // find the quads
+            quads = GetChessQuads(gray);
+            // test draw the contours onto the original image
+            DrawConotursRandomColor(camFrame, quads);
+        }
+        catch (cv::Exception &e)
+        {
+            std::cerr << e.msg << std::endl; // output exception message
+        }
 
-        // test draw the contours onto the original image
-        DrawConotursRandomColor(camFrame, quads);
-
-        // find the figures
-        DetectFigures(camFrame, gray, quads);
+        try
+        {
+            // find the figures
+            DetectFigures(board, camFrame, gray, quads);
+        }
+        catch (cv::Exception &e)
+        {
+            std::cerr << "Error detecting figures: " << e.msg << std::endl; // output exception message
+        }
 
         // recreate the chessboard
 
@@ -106,6 +132,8 @@ int main()
         // show the input image in a window
         imshow("cam", camFrame);
         //imshow("gray", gray);
+
+        // check for key inputs
         char key = cv::waitKey(30);
         if (key == 'c')
         {
@@ -127,6 +155,7 @@ int main()
     queenSvm.release();
     rookSvm.release();
     kingSvm.release();
+    blackSvm.release();
 
     return 0;
 }
@@ -136,11 +165,11 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
     // first: find the hough lines and draw em in a seperate mat
     cv::Mat edges;
     cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
-    Canny(grayImage, edges, 50, 515, 3);
+    Canny(grayImage, edges, cannyThreshold1, cannyThreshold2, 3);
 
     std::vector<cv::Vec2f> lines;
     // detect lines
-    HoughLines(edges, lines, 0.89, 1.56, 61);
+    HoughLines(edges, lines, houghLinesRho, houghLinesTheta, houghLinesThreshold);
 
     // draw the lines in a seperate mat for better rectangle finding
     for (size_t i = 0; i < lines.size(); i++)
@@ -184,6 +213,22 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
             quads.push_back(approxContour);
         }
     }
+
+    // sort the qauds
+    std::sort(quads.begin(), quads.end(),
+              [](const std::vector<cv::Point> &a, const std::vector<cv::Point> &b) -> bool
+              {
+                  // same row
+                  if (abs(a[0].y - b[0].y) < 5)
+                  {
+                      return a[0].x < b[0].x;
+                  }
+                  else
+                  {
+                      return a[0].y < b[0].y;
+                  }
+              });
+
     return quads;
 }
 
@@ -198,67 +243,6 @@ void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> >
     }
 }
 
-std::vector<std::vector<cv::Point>> MergeContours(std::vector<std::vector<cv::Point>> contours)
-{
-
-    std::vector<std::vector<cv::Point>> hull;
-    std::vector<cv::Point> points;
-
-    for (auto contour : contours)
-    {
-        for (auto point : contour)
-        {
-            points.push_back(point);
-        }
-    }
-    // merge contours
-    double peri = arcLength(points, true);
-
-    std::vector<cv::Point> approxContour;
-    approxPolyDP(points, approxContour, peri * 0.001, true);
-
-    hull.push_back(approxContour);
-
-    return hull;
-}
-
-double getPeriSum(std::vector<std::vector<cv::Point>> contours)
-{
-    double peri = 0;
-    for (auto contour : contours)
-    {
-        peri += arcLength(contour, true) * 2;
-    }
-    // merge contours
-    return peri;
-}
-
-int computeOutput(int x, int r1, int s1, int r2, int s2)
-{
-    float result;
-    if (0 <= x && x <= r1)
-    {
-        result = s1 / r1 * x;
-    }
-    else if (r1 < x && x <= r2)
-    {
-        result = ((s2 - s1) / (r2 - r1)) * (x - r1) + s1;
-    }
-    else if (r2 < x && x <= 255)
-    {
-        result = ((255 - s2) / (255 - r2)) * (x - r2) + s2;
-    }
-    return (int) result;
-}
-
-void MergeMatrixVector(Mat &mat, std::vector<cv::Mat> &vector)
-{
-    for (int i = 0; i < vector.size(); i++)
-    {
-        vector[i].copyTo(mat.row(i));
-    }
-}
-
 bool AreSvmsTrained()
 {
     return bishopSvm->isTrained() && knightSvm->isTrained() && pawnSvm->isTrained() &&
@@ -266,20 +250,21 @@ bool AreSvmsTrained()
 
 }
 
-void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std::vector<cv::Point>> const &chessContours)
+void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours)
 {
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Vec4i> hierarchy;
-    cv::Mat mTest, mThresh, mConnected;
-    cv::Mat edges, inputCopy, m1;
-    //cv::Mat inputCopy = cv::imread("scene2.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+    cv::Mat inputCopy, hsvImage;
     inputImage.copyTo(inputCopy);
+
+    cvtColor(originalImage, hsvImage, cv::COLOR_BGR2HLS);
+    std::vector<cv::Mat> hsv;
+    cv::split(hsvImage, hsv);
 
     std::vector<cv::Mat> cells;
     std::vector<cv::Rect> cellsRect;
+    std::vector<cv::Mat> cellsColor;
 
     // use the same size
-    int rectSize = 60;
+    int rectSize = 65;
 
     for (int i = 0; i < chessContours.size(); ++i)
     {
@@ -289,81 +274,134 @@ void DetectFigures(cv::Mat &originalImage, cv::Mat &inputImage, std::vector<std:
         boundRect.y += 4;
         boundRect.width = rectSize;
         boundRect.height = rectSize;
+
         cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
         cv::Mat mask = EyeUtils::GetThresholdImage(imageRoi);
+        cv::Mat descriptor = EyeUtils::GetDescriptor(imageRoi);
+        cv::Mat colorDescriptor = EyeUtils::GetColorDescriptor(imageRoi);
 
-        cv::Mat descriptor = EyeUtils::GetDescriptor(mask);
         cells.push_back(descriptor);
         cellsRect.push_back(boundRect);
+        cellsColor.push_back(colorDescriptor);
 
         if (writeNextFigures)
         {
+            // save the image
             imwrite("image" + std::to_string(i) + ".png", imageRoi);
             imwrite("image" + std::to_string(i) + "_masked.png", mask);
         }
     }
 
-    Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
-    MergeMatrixVector(mergedMat, cells);
-
-    if (AreSvmsTrained() && mergedMat.data)
+    if (cells.size() > 0 && cells.size() == 64)
     {
-        Mat bishopResponse, knightResponse, pawnResponse, queenResponse,
-            rookResponse, kingResponse;
 
-        bishopSvm->predict(mergedMat, bishopResponse);
-        knightSvm->predict(mergedMat, knightResponse);
-        pawnSvm->predict(mergedMat, pawnResponse);
-        queenSvm->predict(mergedMat, queenResponse);
-        rookSvm->predict(mergedMat, rookResponse);
-        kingSvm->predict(mergedMat, kingResponse);
+        Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
+        EyeUtils::MergeMatrixVector(mergedMat, cells);
 
-        int responseLength = bishopResponse.rows;
+        Mat colorMergedMat(cellsColor.size(), cellsColor[0].cols, CV_32FC1);
+        EyeUtils::MergeMatrixVector(colorMergedMat, cellsColor);
 
-        for (int i = 0; i < responseLength; i++)
+        // check the svms if a figure is detected
+        if (AreSvmsTrained() && mergedMat.data)
         {
+            Mat bishopResponse, knightResponse, pawnResponse, queenResponse,
+                rookResponse, kingResponse, blackResponse;
 
-            try
+            bishopSvm->predict(mergedMat, bishopResponse);
+            knightSvm->predict(mergedMat, knightResponse);
+            pawnSvm->predict(mergedMat, pawnResponse);
+            queenSvm->predict(mergedMat, queenResponse);
+            rookSvm->predict(mergedMat, rookResponse);
+            kingSvm->predict(mergedMat, kingResponse);
+            blackSvm->predict(colorMergedMat, blackResponse);
+
+            int responseLength = bishopResponse.rows;
+
+            for (int i = 0; i < responseLength; i++)
             {
-
                 std::string figureName = "";
+                ChessFigure figure;
 
-                int isBishop = round(bishopResponse.at<float>(i, 0));
-                int isKnight = round(knightResponse.at<float>(i, 0));
-                bool isPawn = round(pawnResponse.at<float>(i, 0));
-                bool isQueen = round(queenResponse.at<float>(i, 0));
-                bool isRook = round(rookResponse.at<float>(i, 0));
-                bool isKing = round(kingResponse.at<float>(i, 0));
+                try
+                {
+                    auto isBishop = bishopResponse.at<float>(i, 0);
+                    auto isKnight = knightResponse.at<float>(i, 0);
+                    auto isPawn = pawnResponse.at<float>(i, 0);
+                    auto isQueen = queenResponse.at<float>(i, 0);
+                    auto isRook = rookResponse.at<float>(i, 0);
+                    auto isKing = kingResponse.at<float>(i, 0);
 
-                cv::Rect boundRect = cellsRect.at(i);
+                    cv::Rect boundRect = cellsRect.at(i);
 
-                if (isKing)
-                    figureName = "KING";
-                if (isQueen)
-                    figureName = "QUEEN";
-                if (isRook)
-                    figureName = "ROOK";
-                if (isBishop)
-                    figureName = "BISHOP";
-                if (isKnight)
-                    figureName = "KNIGHT";
-                if (isPawn)
-                    figureName = "PAWN";
+                    if (isPawn)
+                    {
+                        figureName = "PAWN";
+                        figure.figure_type = PAWN;
+                    }
+                    if (isKing)
+                    {
+                        figureName = "KING";
+                        figure.figure_type = KING;
+                    }
+                    if (isQueen)
+                    {
+                        figureName = "QUEEN";
+                        figure.figure_type = QUEEN;
+                    }
+                    if (isRook)
+                    {
+                        figureName = "ROOK";
+                        figure.figure_type = ROOK;
+                    }
+                    if (isBishop)
+                    {
+                        figureName = "BISHOP";
+                        figure.figure_type = BISHOP;
+                    }
+                    if (isKnight)
+                    {
+                        figureName = "KNIGHT";
+                        figure.figure_type = KNIGHT;
+                    }
 
-                putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
-                    .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+                    if (!figureName.empty())
+                    {
+                        std::string figureColor = "white";
+
+                        if (blackResponse.at<float>(i, 0))
+                            figureColor = "black";
+
+                        // Debug: write the figure name into the image
+                        putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
+                            .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+
+                        // write the color
+                        putText(originalImage, figureColor, cv::Point(boundRect.x, boundRect
+                                                                                       .y
+                                                                                   + 20), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+
+                        //std::cout << figureName << cellsColor.at(i) << std::endl;
+                    }
+
+                }
+                catch (const std::out_of_range &ex)
+                {
+                    std::cerr << "Out of Range error: " << ex.what() << '\n';
+                }
+                catch (const cv::Exception &ex)
+                {
+                    std::cerr << "Out of Range error: " << ex.what() << '\n';
+                }
+
+                chessFigures[i] = figure;
+
             }
-            catch (const std::out_of_range &ex)
-            {
-                std::cerr << "Out of Range error: " << ex.what() << '\n';
-            }
-
+        }
+        else
+        {
+            //std::cout << "No data " << std::endl;
         }
     }
-    else
-    {
-        //std::cout << "No data " << std::endl;
-    }
-
     writeNextFigures = false;
 }
+

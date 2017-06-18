@@ -21,57 +21,6 @@ using namespace cv;
 using namespace cv::ml;
 namespace fs = boost::filesystem;
 
-void train(std::string target_path, std::vector<std::pair<Mat, int>> &dict, int classId)
-{
-
-    boost::filesystem::directory_iterator end_itr; // Default ctor yields past-the-end
-    for (boost::filesystem::directory_iterator i(target_path); i != end_itr; ++i)
-    {
-        //std::string file = "chessBoard/image" + std::to_string(i) + ".png";
-        Mat matExC1 = imread((*i).path().string(), CV_8UC1);
-        Mat edges;
-
-        //imshow("matExC1", matExC1);
-
-        if ((!matExC1.data))
-        {
-            continue;
-        }
-
-        matExC1 = EyeUtils::GetThresholdImage(matExC1);
-        //imshow("test", matExC1);
-        //waitKey(0);
-
-        HOGDescriptor hog(
-            Size(20, 20), //winSize
-            Size(10, 10), //blocksize
-            Size(5, 5), //blockStride,
-            Size(10, 10), //cellSize,
-            9, //nbins,
-            1, //derivAper,
-            -1, //winSigma,
-            0, //histogramNormType,
-            0.2, //L2HysThresh,
-            1,//gammal correction,
-            64,//nlevels=64
-            1);//Use signed gradients
-        vector<float> descriptors;
-        hog.compute(matExC1, descriptors);
-
-        Mat ft; // Fourier descriptor vector
-        //int dist; // store the label of the minimum distance neighbor
-//        ft = calcFourierDescriptor(matExC1); // compute the Fourier Descriptor for this image
-//
-//        if (ft.data)
-//        {
-//            std::pair<cv::Mat, int> fd;
-//            fd.first = ft;
-//            fd.second = classId;
-//            dict.push_back(fd);
-//        }
-    }
-}
-
 void LoadImageDescriptors(std::string const &pathName, vector<Mat> &trainCells)
 {
     // load all files from the given path
@@ -80,77 +29,44 @@ void LoadImageDescriptors(std::string const &pathName, vector<Mat> &trainCells)
     {
         // load it and create an edge image
         //Mat img = imread(pathName, CV_LOAD_IMAGE_GRAYSCALE);
-        Mat matExC1 = imread((*i).path().string(), CV_8UC1);
+        Mat image = imread((*i).path().string(), CV_8UC1);
         Mat edges;
 
-        if ((!matExC1.data))
+        if ((!image.data))
         {
             continue;
         }
 
-        edges = EyeUtils::GetThresholdImage(matExC1);
+        //image = EyeUtils::GetThresholdImage(image);
         //imshow("test", edges);
         //waitKey(0);
 
-        cv::Mat descriptor;
-        descriptor = EyeUtils::GetDescriptor(edges);
+        cv::Mat descriptor = EyeUtils::GetDescriptor(image);
 
         trainCells.push_back(descriptor);
     }
 }
 
-HOGDescriptor hog(
-    Size(60, 60), //winSize
-    Size(8, 8), //blocksize
-    Size(4, 4), //blockStride,
-    Size(8, 8), //cellSize,
-    9, //nbins,
-    1, //derivAper,
-    -1, //winSigma,
-    0, //histogramNormType,
-    0.2, //L2HysThresh,
-    0,//gammal correction,
-    64,//nlevels=64
-    1);
-
-void CreateTrainTestHOG(vector<vector<float> > &trainHOG, vector<vector<float> > &testHOG,
-                        vector<Mat> &deskewedtrainCells, vector<Mat> &deskewedtestCells)
+void LoadImageColors(std::string const &pathName, vector<Mat> &trainCells)
 {
-
-    for (int y = 0; y < deskewedtrainCells.size(); y++)
+    // load all files from the given path
+    boost::filesystem::directory_iterator end_itr; // Default ctor yields past-the-end
+    for (boost::filesystem::directory_iterator i(pathName); i != end_itr; ++i)
     {
-        vector<float> descriptors;
-        hog.compute(deskewedtrainCells[y], descriptors);
-        trainHOG.push_back(descriptors);
-    }
+        // load it and create an edge image
+        //Mat img = imread(pathName, CV_LOAD_IMAGE_GRAYSCALE);
+        Mat src = imread((*i).path().string(), CV_8UC1);
 
-    for (int y = 0; y < deskewedtestCells.size(); y++)
-    {
-        vector<float> descriptors;
-        hog.compute(deskewedtestCells[y], descriptors);
-        testHOG.push_back(descriptors);
-    }
-}
-
-void ConvertVectortoMatrix(vector<vector<float> > &trainHOG, vector<vector<float> > &testHOG,
-                           Mat &trainMat, Mat &testMat)
-{
-
-    int descriptor_size = trainHOG[0].size();
-
-    for (int i = 0; i < trainHOG.size(); i++)
-    {
-        for (int j = 0; j < descriptor_size; j++)
+        if ((!src.data))
         {
-            trainMat.at<float>(i, j) = trainHOG[i][j];
+            continue;
         }
-    }
-    for (int i = 0; i < testHOG.size(); i++)
-    {
-        for (int j = 0; j < descriptor_size; j++)
-        {
-            testMat.at<float>(i, j) = testHOG[i][j];
-        }
+
+        //src = EyeUtils::GetThresholdImage(src);
+        Mat descriptor = EyeUtils::GetColorDescriptor(src);
+
+        //descriptor = EyeUtils::GetDescriptor(edges);
+        trainCells.push_back(descriptor);
     }
 }
 
@@ -167,13 +83,13 @@ void getSVMParams(SVM *svm)
 void SVMtrain(Mat &trainMat, vector<int> &trainLabels, Mat &testResponse, Mat &testMat, std::string const &savePath)
 {
     Ptr<SVM> svm = SVM::create();
-    //svm->setGamma(0.6);
-    //svm->setC(10);
-    svm->setKernel(SVM::LINEAR );
+    svm->setGamma(0.9);
+    svm->setC(10);
+    svm->setKernel(SVM::    LINEAR );
     svm->setType(SVM::C_SVC);
     Ptr<TrainData> td = TrainData::create(trainMat, ROW_SAMPLE, trainLabels);
-    //svm->train(td);
-    svm->trainAuto(td);
+    svm->train(td);
+    //svm->trainAuto(td);
     svm->save(savePath);
     svm->predict(testMat, testResponse);
 
@@ -197,8 +113,8 @@ void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
                std::initializer_list<std::vector<Mat>> const &otherClasses)
 {
     Mat testResponse;
-    vector<Mat> completeSet;
-    vector<int> completeLabels;
+    std::vector<Mat> completeSet;
+    std::vector<int> completeLabels;
 
     for (auto currMat: firstClass)
     {
@@ -214,14 +130,14 @@ void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
         }
     }
 
-    // split the data into training and test data
+    //split the data into training and test data
 //    std::size_t const half_size = completeSet.size() / 2;
 //    std::vector<Mat> trainingData(completeSet.begin(), completeSet.begin() + half_size);
 //    std::vector<Mat> testData(completeSet.begin() + half_size, completeSet.end());
 //
 //    std::vector<int> trainingLabels(completeLabels.begin(), completeLabels.begin() + half_size);
 //    std::vector<int> testLabels(completeLabels.begin() + half_size, completeLabels.end());
-
+//
 
     // dont split
     std::vector<Mat> trainingData = completeSet;
@@ -231,8 +147,9 @@ void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
     std::vector<int> testLabels = completeLabels;
 
     // convert it into a single Mat
-    Mat trainMat(completeSet.size(), completeSet[0].cols, CV_32FC1);
-    Mat testMat(completeSet.size(), completeSet[0].cols, CV_32FC1);
+    int colSize = completeSet[0].cols;
+    Mat trainMat(completeSet.size(), colSize, CV_32FC1);
+    Mat testMat(completeSet.size(), colSize, CV_32FC1);
     EyeUtils::MergeMatrixVector(trainMat, trainingData);
     EyeUtils::MergeMatrixVector(testMat, testData);
 
@@ -247,15 +164,18 @@ void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
 int main()
 {
     vector<Mat> kingDescritpors, pawnDescritpors, emptyDescritpors, queenDescritpors, rookDescritpors,
-        bishopDescritpors, knightDescritpors;
+        bishopDescritpors, knightDescritpors, blackDescriptors, whiteDescriptors;
 
-    //LoadImageDescriptors("chessBoard/empty/", emptyDescritpors);
-    LoadImageDescriptors("chessBoard/king/", kingDescritpors);
-    LoadImageDescriptors("chessBoard/queen/", queenDescritpors);
-    LoadImageDescriptors("chessBoard/rook/", rookDescritpors);
-    LoadImageDescriptors("chessBoard/bishop/", bishopDescritpors);
-    LoadImageDescriptors("chessBoard/knight/", knightDescritpors);
-    LoadImageDescriptors("chessBoard/pawn/", pawnDescritpors);
+    LoadImageDescriptors("../train/chessBoard/empty/", emptyDescritpors);
+    LoadImageDescriptors("../train/chessBoard/king/", kingDescritpors);
+    LoadImageDescriptors("../train/chessBoard/queen/", queenDescritpors);
+    LoadImageDescriptors("../train/chessBoard/rook/", rookDescritpors);
+    LoadImageDescriptors("../train/chessBoard/bishop/", bishopDescritpors);
+    LoadImageDescriptors("../train/chessBoard/knight/", knightDescritpors);
+    LoadImageDescriptors("../train/chessBoard/pawn/", pawnDescritpors);
+
+    LoadImageColors("../train/chessBoard/black/", blackDescriptors);
+    LoadImageColors("../train/chessBoard/white/", whiteDescriptors);
 
     // one vs Rest
     CreateSVM("king.yml", kingDescritpors, {queenDescritpors, rookDescritpors, bishopDescritpors,
@@ -270,6 +190,8 @@ int main()
                                                 pawnDescritpors, emptyDescritpors});
     CreateSVM("pawn.yml", pawnDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
                                             knightDescritpors, emptyDescritpors});
+
+    CreateSVM("black.yml", blackDescriptors, {whiteDescriptors});
 
     return 0;
 

@@ -16,10 +16,10 @@ using namespace cv;
 namespace EyeUtils
 {
 
-
 cv::Mat GetThresholdImage(cv::Mat &image)
 {
-    Mat blur, thres;
+    Mat eqHist, blur, thres;
+    equalizeHist(eqHist, eqHist);
     GaussianBlur(image, blur, Size(5, 5), 0);
     cv::threshold(blur, thres, 0, 255, THRESH_BINARY | THRESH_OTSU);
 
@@ -36,9 +36,15 @@ void ConvertVectortoMatrix(std::vector<float> &vector, cv::Mat &mat)
 
 void MergeMatrixVector(Mat &mat, std::vector<Mat> &vector)
 {
-    for (int i = 0; i < vector.size(); i++)
+    try
     {
-        vector[i].copyTo(mat.row(i));
+        for (int i = 0; i < vector.size(); i++)
+        {
+            vector.at(i).copyTo(mat.row(i));
+        }
+    } catch (Exception e)
+    {
+        std::cout << e.msg << std::endl;
     }
 }
 
@@ -66,7 +72,42 @@ cv::Mat GetDescriptor(cv::Mat &image)
 
     return descriptorMat;
 
-    return calcFourierDescriptor(image);
+//    return calcFourierDescriptor(image);
+}
+
+cv::Mat GetColorDescriptor(cv::Mat &image)
+{
+    int histSize = 256;
+    float range[] = {0, 256};
+    const float *histRange = {range};
+    bool uniform = true;
+    bool accumulate = false;
+
+    cv::Mat images[] = {image};
+    cv::Mat hist;
+    calcHist(images, 1, 0, Mat(), hist, 1, &histSize, &histRange, uniform, accumulate);
+    transpose(hist, hist);
+    return hist;
+
+//    cv::Scalar mean, stddev;
+//
+//    cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
+//    cv::Point circleCenter(mask.cols / 2, mask.rows / 2);
+//    int radius = 10;
+//    cv::circle(mask, circleCenter, radius, CV_RGB(255, 255, 255));
+//    cv::Mat imagePart = cv::Mat::zeros(image.size(), image.type());
+//    image.copyTo(imagePart, mask);
+//    meanStdDev(image, mean, stddev, mask);
+//
+//    Mat descriptor(1, 2, CV_32FC1);
+//    std::vector<float> values;
+//    values.push_back((float)mean.val[0]);
+//    values.push_back((float)stddev.val[0]);
+//
+//    EyeUtils::ConvertVectortoMatrix(values, descriptor);
+//
+//    return descriptor;
+
 }
 
 }
