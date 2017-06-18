@@ -69,19 +69,30 @@ int main() {
     std::cout<< "sendStr Test:      " << sendStr <<std::endl;
     guiSender.Send(sendStr.c_str());
 
-//    std::string testString =  "rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
-//
-//    while (true) {
-//        std::string nextBoard = eyeReceiver.Receive();
-//        Zobrist newZobrist(nextBoard);
-//
-//        if(currentZobrist.zobristHash != newZobrist.zobristHash) {
-//            currentZobrist = newZobrist;
-//            currentBoard = ChessBoard(testString);
-//
-//            //Send and receive best move Request TODO
-//            guiSender.Send(currentBoard.toString().c_str());
-//        }
-//    }
+    std::string testString =  "rnbqkbnr/pp1ppppp/8/2p5/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1";
+
+    while (true) {
+      std::string nextBoard = eyeReceiver.Receive();
+      Zobrist newZobrist(nextBoard);
+
+      if(currentZobrist.zobristHash != newZobrist.zobristHash) {
+           currentZobrist = newZobrist;
+           currentBoard = ChessBoard(nextBoard);
+            /*
+             * TODO:
+             * 1. Check if the next board is a valid
+             * 2. Check if there is still a casteling right
+             *    -set The coressponding values in the board
+             * 3. Check if there was an enpassent
+             *    -set the coressponding values in the board
+             * 4. Set the current moves color in the board
+             * 5. Set the current move number in the board
+             * 6. Set the current half move number in the board
+             */
+           //Send and receive best move Request
+           sendStr = currentBoard.toString()+ " " +askStockfishForBestMove(currentTestBoard.toString().c_str());
+           guiSender.Send(sendStr.c_str());
+        }
+   }
     return 0;
 }
