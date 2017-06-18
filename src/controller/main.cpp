@@ -36,7 +36,7 @@ std::string askStockfishForBestMove(const char* fen) {
     cmd += "position fen ";
     cmd += fen;
     cmd += "\n";
-    cmd += "go movetime 1999\n";
+    cmd += "go depth 4\n";
     cmd += "EOF";
     std::string res = exec(cmd.c_str());
     std::size_t pos = res.find("bestmove");
