@@ -38,7 +38,11 @@ std::string ChessEngneCommunicator::askStockfishForBestMove(const char* fen) {
     std::string res = exec(cmd.c_str());
     std::size_t pos = res.find("bestmove");
 
-    res = res.substr (pos);
+    if(pos !=std::string::npos) {
+        res = res.substr(pos);
+    } else {
+        res = "bestmove (none)";
+    }
 
     return res;
 }
