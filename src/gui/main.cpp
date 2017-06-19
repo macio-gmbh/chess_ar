@@ -12,18 +12,23 @@ static void boardPrinter(std::string fen) {
     std::cout << " ############  Current game status is:  ############" << std::endl;
     std::cout << std::endl;
     std::cout << fen << std::endl;
+    std::cout << std::endl;
     vector<std::string> fenList;
     boost::split(fenList, fen, boost::is_any_of(" "));
-    std::cout << fenList.size()<< std::endl;
+  //  std::cout << fenList.size()<< std::endl;
 
-    std::cout << "         | ";
+    int  row = 8;
+    std::cout <<"               A   B   C   D   E   F   G   H"<< std::endl;
+    std::cout << "         "<<row <<"   | ";
+    row-=1;
     for (std::string::iterator it = fenList[0].begin(); it != fenList[0].end(); ++it) {
 
         if ((*it) == '/') {
             std::cout << std::endl;
 
-            std::cout << "         ---------------------------------" << std::endl;
-            std::cout << "         | ";
+            std::cout << "             ---------------------------------" << std::endl;
+            std::cout << "         "<<row <<"   | ";
+            row-=1;
         } else if (isdigit(*it)) {
             std::stringstream ss;
             ss << *it;
