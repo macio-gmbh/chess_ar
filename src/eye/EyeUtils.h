@@ -42,7 +42,8 @@ void MergeMatrixVector(Mat &mat, std::vector<Mat> &vector)
         {
             vector.at(i).copyTo(mat.row(i));
         }
-    } catch (Exception e)
+    }
+    catch (Exception e)
     {
         std::cout << e.msg << std::endl;
     }
@@ -83,6 +84,13 @@ cv::Mat GetColorDescriptor(cv::Mat &image)
     bool uniform = true;
     bool accumulate = false;
 
+    cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
+    cv::Point circleCenter(mask.cols / 2, mask.rows / 2);
+    int radius = 20;
+    cv::circle(mask, circleCenter, radius, CV_RGB(255, 255, 255));
+    cv::Mat imagePart = cv::Mat::zeros(image.size(), image.type());
+    image.copyTo(imagePart, mask);
+
     cv::Mat images[] = {image};
     cv::Mat hist;
     calcHist(images, 1, 0, Mat(), hist, 1, &histSize, &histRange, uniform, accumulate);
@@ -90,13 +98,6 @@ cv::Mat GetColorDescriptor(cv::Mat &image)
     return hist;
 
 //    cv::Scalar mean, stddev;
-//
-//    cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
-//    cv::Point circleCenter(mask.cols / 2, mask.rows / 2);
-//    int radius = 10;
-//    cv::circle(mask, circleCenter, radius, CV_RGB(255, 255, 255));
-//    cv::Mat imagePart = cv::Mat::zeros(image.size(), image.type());
-//    image.copyTo(imagePart, mask);
 //    meanStdDev(image, mean, stddev, mask);
 //
 //    Mat descriptor(1, 2, CV_32FC1);

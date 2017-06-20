@@ -1,4 +1,6 @@
 #include <iostream>
+#include <functional>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -11,10 +13,12 @@
 
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/ini_parser.hpp>
 
 const bool USE_STATIC_IMAGE = false;
 
-// chessboard detection
+// chessboard detection, default values if config file not found
 double cannyThreshold1 = 50;
 double cannyThreshold2 = 515;
 
@@ -37,7 +41,6 @@ Ptr<cv::ml::SVM> rookSvm;
 Ptr<cv::ml::SVM> kingSvm;
 Ptr<cv::ml::SVM> blackSvm;
 
-
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
@@ -45,6 +48,42 @@ void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage
 
 int main()
 {
+    // load the config ini file
+    boost::property_tree::ptree config;
+    boost::filesystem::path iniPath = "../config/eye.ini";
+
+    if (!boost::filesystem::exists(iniPath))
+    {
+        fprintf(stderr, "Can't find the config file \n");
+    }
+    else
+    {
+        try
+        {
+            boost::property_tree::read_ini(iniPath.generic_string(), config);
+
+            config.put("a.value", 3.14f);
+            boost::property_tree::write_ini(iniPath.generic_string(), config);
+
+            cannyThreshold1 = config.get("canny.cannyThreshold1", cannyThreshold1);
+            cannyThreshold2 = config.get("canny.cannyThreshold2", cannyThreshold2);
+
+            houghLinesRho = config.get("houghLines.houghLinesRho", houghLinesRho);
+            houghLinesTheta = config.get("houghLines.houghLinesTheta", houghLinesTheta);
+            houghLinesThreshold = config.get("houghLines.houghLinesThreshold", houghLinesThreshold);
+
+            minPeri = config.get("quadDetection.minPeri", minPeri);
+            maxPeri = config.get("quadDetection.maxPeri", maxPeri);
+            periScale = config.get("quadDetection.periScale", periScale);
+        }
+        catch (std::exception &ex)
+        {
+            std::cerr << ex.what() << std::endl;
+        }
+
+    }
+
+    // load the pretrained SVMs
     bishopSvm = bishopSvm->load("bishop.yml");
     knightSvm = knightSvm->load("knight.yml");
     pawnSvm = pawnSvm->load("pawn.yml");
@@ -59,9 +98,9 @@ int main()
     ChessBoard currentBoard = ChessBoard(initialBoard);
     ChessFigure board[64];
 
-    cv::VideoCapture capture(1);
+    cv::VideoCapture capture(0);
     cv::Mat camFrame;
-    cv::Mat chessImage;
+    cv::Mat chessImage, originalImage;
     bool staticImage = false;
 
     // open the camera
@@ -69,7 +108,7 @@ int main()
     {
         std::cout << "cannot open camera, using the static image \n";
         staticImage = true;
-        chessImage = cv::imread("../train/chessBoard/chess.png", 1);
+        chessImage = cv::imread("../train/chessBoard/chess_8.png", 1);
 
         if (!chessImage.data)
         {
@@ -96,6 +135,8 @@ int main()
             // copy the opened test image to the camFrame so it wont be overwritten
             chessImage.copyTo(camFrame);
         }
+
+        camFrame.copyTo(originalImage);
 
         // make a gray image
         cv::Mat gray;
@@ -137,7 +178,7 @@ int main()
         char key = cv::waitKey(30);
         if (key == 'c')
         {
-            imwrite("camFrame.png", camFrame);
+            imwrite("camFrame.png", originalImage);
         }
         if (key == 'f')
         {
@@ -294,7 +335,6 @@ void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage
 
     if (cells.size() > 0 && cells.size() == 64)
     {
-
         Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
         EyeUtils::MergeMatrixVector(mergedMat, cells);
 
