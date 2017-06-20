@@ -94,8 +94,8 @@ void SVMtrain(Mat &trainMat, vector<int> &trainLabels, Mat &testResponse, Mat &t
         svm->setKernel(SVM::LINEAR);
         svm->setType(SVM::C_SVC);
         Ptr<TrainData> td = TrainData::create(trainMat, ROW_SAMPLE, trainLabels);
-        //svm->train(td);
-        svm->trainAuto(td);
+        svm->train(td);
+        //svm->trainAuto(td);
         svm->save(savePath);
         svm->predict(testMat, testResponse);
 
@@ -200,7 +200,7 @@ int main()
     LoadImageColors("../train/chessBoard/black/", blackDescriptors);
     LoadImageColors("../train/chessBoard/white/", whiteDescriptors);
 
-    bool split = true;
+    bool split = false;
 
     // one vs Rest
     CreateSVM("king.yml", kingDescritpors, {queenDescritpors, rookDescritpors, bishopDescritpors,
@@ -214,7 +214,7 @@ int main()
     CreateSVM("knight.yml", knightDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
                                                 pawnDescritpors, emptyDescritpors}, split);
     CreateSVM("pawn.yml", pawnDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
-                                            knightDescritpors, emptyDescritpors} ,split);
+                                            knightDescritpors, emptyDescritpors}, split);
 
     CreateSVM("black.yml", blackDescriptors, {whiteDescriptors});
 
