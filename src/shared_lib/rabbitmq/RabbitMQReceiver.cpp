@@ -10,9 +10,16 @@ RabbitMQReceiver::RabbitMQReceiver(const char *hostname, int port, const char *e
     // create a neq queue
     amqp_queue_declare_ok_t *r = amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 0, 0, 1,
                                                     amqp_empty_table);
+
+    if (r == NULL)
+    {
+        fprintf(stderr, "Cant' create the queue. Maybe rabbitMQ Server is not up? \n");
+        return;
+    }
+
     queuename = amqp_bytes_malloc_dup(r->queue);
     if (queuename.bytes == NULL) {
-        fprintf(stderr, "Out of memory while copying queue name");
+        fprintf(stderr, "Out of memory while copying queue name \n");
         return;
     }
 

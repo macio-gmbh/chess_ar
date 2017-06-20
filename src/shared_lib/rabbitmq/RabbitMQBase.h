@@ -7,6 +7,7 @@
 
 #include <amqp.h>
 #include <amqp_tcp_socket.h>
+#include <functional>
 
 // needs rabbitmq-c library from https://github.com/alanxz/rabbitmq-c
 class RabbitMQBase {
