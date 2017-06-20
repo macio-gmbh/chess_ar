@@ -28,6 +28,7 @@ You also need to set some extra Paths for Windows (like BOOST_ROOT and OpenCV_DI
 
 Also if you want to run the code (seperate modules communicate via a Message broker):
 * [RabbitMQ Server](https://www.rabbitmq.com/download.html)
+* [Stockfish UCI Engine for suggested moves]https://github.com/official-stockfish/Stockfish
 
 ### How to build the code:
 
