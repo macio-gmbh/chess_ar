@@ -15,13 +15,13 @@
 #define CHESS_AR_CHESSENGNECOMMUNICATOR_H
 
 
-class ChessEngneCommunicator {
+class ChessEngineCommunicator {
 
     std::string engine;
 public:
-    ChessEngneCommunicator();
+    ChessEngineCommunicator();
 
-    ChessEngneCommunicator(std::string chessEngineName);
+    ChessEngineCommunicator(std::string chessEngineName);
     std::string exec(const char* cmd);
 
     /*
