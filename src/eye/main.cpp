@@ -6,6 +6,7 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/ml.hpp>
 #include <opencv2/video.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
 
 #include "./EyeUtils.h"
 #include "../shared_lib/rabbitmq/RabbitMQSender.h"
@@ -17,6 +18,10 @@
 #include <boost/property_tree/ini_parser.hpp>
 
 const bool USE_STATIC_IMAGE = false;
+const boost::filesystem::path iniPath = "../config/eye.ini";
+boost::filesystem::path staticImagePath = "../train/chessBoard/chess.png";
+boost::filesystem::path calibPath = "../config/logitech_c920.yml";
+int cameraIndex = 0;
 
 // chessboard detection, default values if config file not found
 double cannyThreshold1 = 50;
@@ -50,11 +55,10 @@ int main()
 {
     // load the config ini file
     boost::property_tree::ptree config;
-    boost::filesystem::path iniPath = "../config/eye.ini";
 
     if (!boost::filesystem::exists(iniPath))
     {
-        fprintf(stderr, "Can't find the config file \n");
+        std::cerr << "Can't find the config file" << std::endl;
     }
     else
     {
@@ -62,8 +66,9 @@ int main()
         {
             boost::property_tree::read_ini(iniPath.generic_string(), config);
 
-            config.put("a.value", 3.14f);
-            boost::property_tree::write_ini(iniPath.generic_string(), config);
+            staticImagePath = config.get("general.staticImage", staticImagePath);
+            calibPath = config.get("general.calibPath", calibPath);
+            cameraIndex = config.get("general.cameraIndex", cameraIndex);
 
             cannyThreshold1 = config.get("canny.cannyThreshold1", cannyThreshold1);
             cannyThreshold2 = config.get("canny.cannyThreshold2", cannyThreshold2);
@@ -80,7 +85,39 @@ int main()
         {
             std::cerr << ex.what() << std::endl;
         }
+    }
 
+    Mat cameraMatrix, distCoeffs, newCamMatix;
+    Rect distortRoi;
+
+    if (!boost::filesystem::exists(calibPath))
+    {
+        std::cerr << "Can't find the calibration file" << std::endl;
+    }
+    else
+    {
+        try
+        {
+            // undisort the camera with the given calibration matrix
+            FileStorage fs2(calibPath.generic_string(), FileStorage::READ);
+
+            fs2["camera_matrix"] >> cameraMatrix;
+            fs2["distortion_coefficients"] >> distCoeffs;
+
+            if (cameraMatrix.data && distCoeffs.data)
+            {
+                newCamMatix = getOptimalNewCameraMatrix(cameraMatrix, distCoeffs,
+                                                        Size(640, 480), 0, Size(1280, 720), &distortRoi);
+            }
+            else
+            {
+                std::cerr << "Camera calibration is invalid, using normal camera output." << std::endl;
+            }
+        }
+        catch (std::exception &ex)
+        {
+            std::cerr << ex.what() << std::endl;
+        }
     }
 
     // load the pretrained SVMs
@@ -98,9 +135,9 @@ int main()
     ChessBoard currentBoard = ChessBoard(initialBoard);
     ChessFigure board[64];
 
-    cv::VideoCapture capture(0);
+    cv::VideoCapture capture(cameraIndex);
     cv::Mat camFrame;
-    cv::Mat chessImage, originalImage;
+    cv::Mat chessImage, originalImage, camFrameUndistort;
     bool staticImage = false;
 
     // open the camera
@@ -108,11 +145,11 @@ int main()
     {
         std::cout << "cannot open camera, using the static image \n";
         staticImage = true;
-        chessImage = cv::imread("../train/chessBoard/chess_8.png", 1);
+        chessImage = cv::imread(staticImagePath.generic_string(), 1);
 
         if (!chessImage.data)
         {
-            printf("No image data \n");
+            fprintf(stderr, "No image data \n");
             return -1;
         }
 
@@ -138,9 +175,24 @@ int main()
 
         camFrame.copyTo(originalImage);
 
+        if (newCamMatix.data)
+        {
+            // undistort the image
+            undistort(camFrame, camFrameUndistort, cameraMatrix, distCoeffs, newCamMatix);
+
+            // crop the image if we got an roi
+            if (distortRoi.width > 0 && distortRoi.height > 0)
+                camFrameUndistort = Mat(camFrameUndistort, distortRoi);
+        }
+        else
+        {
+            camFrame.copyTo(camFrameUndistort);
+        }
+
+
         // make a gray image
         cv::Mat gray;
-        cvtColor(camFrame, gray, cv::COLOR_RGB2GRAY);
+        cvtColor(camFrameUndistort, gray, cv::COLOR_RGB2GRAY);
         std::vector<std::vector<cv::Point> > quads;
 
         try
@@ -148,7 +200,7 @@ int main()
             // find the quads
             quads = GetChessQuads(gray);
             // test draw the contours onto the original image
-            DrawConotursRandomColor(camFrame, quads);
+            DrawConotursRandomColor(camFrameUndistort, quads);
         }
         catch (cv::Exception &e)
         {
@@ -158,7 +210,7 @@ int main()
         try
         {
             // find the figures
-            DetectFigures(board, camFrame, gray, quads);
+            DetectFigures(board, camFrameUndistort, gray, quads);
         }
         catch (cv::Exception &e)
         {
@@ -171,7 +223,7 @@ int main()
         sender.Send(currentBoard.toString().c_str());
 
         // show the input image in a window
-        imshow("cam", camFrame);
+        imshow("cam", camFrameUndistort);
         //imshow("gray", gray);
 
         // check for key inputs
