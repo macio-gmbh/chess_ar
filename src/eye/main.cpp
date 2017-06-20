@@ -35,6 +35,7 @@ double houghLinesThreshold = 61;
 double minPeri = 220;
 double maxPeri = 288;
 double periScale = 0.05;
+int rectSize = 65;
 
 bool writeNextFigures = false;
 
@@ -49,7 +50,9 @@ Ptr<cv::ml::SVM> blackSvm;
 // forward declaration functions
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
-void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours);
+void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours, std::array<
+    ChessFigure,
+    64> &board);
 
 int main()
 {
@@ -80,6 +83,7 @@ int main()
             minPeri = config.get("quadDetection.minPeri", minPeri);
             maxPeri = config.get("quadDetection.maxPeri", maxPeri);
             periScale = config.get("quadDetection.periScale", periScale);
+            rectSize = config.get("quadDetection.rectSize", rectSize);
         }
         catch (std::exception &ex)
         {
@@ -107,7 +111,7 @@ int main()
             if (cameraMatrix.data && distCoeffs.data)
             {
                 newCamMatix = getOptimalNewCameraMatrix(cameraMatrix, distCoeffs,
-                                                        Size(640, 480), 0, Size(1280, 720), &distortRoi);
+                                                        Size(640, 480), 1, Size(1280, 720), &distortRoi);
             }
             else
             {
@@ -133,11 +137,19 @@ int main()
 
     std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     ChessBoard currentBoard = ChessBoard(initialBoard);
-    ChessFigure board[64];
+    std::array<ChessFigure, 64> board;
+    cv::VideoCapture capture;
 
-    cv::VideoCapture capture(cameraIndex);
-    cv::Mat camFrame;
-    cv::Mat chessImage, originalImage, camFrameUndistort;
+    // -1 == dont use the camera
+    if (cameraIndex != -1)
+    {
+        capture = cv::VideoCapture(cameraIndex);
+    }
+
+    // local variables need for the main loop
+    cv::Mat camFrame, gray, chessImage, originalImage, camFrameUndistort;
+    std::vector<std::vector<cv::Point> > quads;
+
     bool staticImage = false;
 
     // open the camera
@@ -157,12 +169,14 @@ int main()
         //return 0;
     }
 
+    //&& set the resolution from the webcam to 1280 x 720
     capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
     capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
     // main loop
     while (true)
     {
+        // get the image, from the camera or use the static image
         if (!staticImage)
         {
             capture.read(camFrame);
@@ -175,9 +189,9 @@ int main()
 
         camFrame.copyTo(originalImage);
 
+        // undistort the image
         if (newCamMatix.data)
         {
-            // undistort the image
             undistort(camFrame, camFrameUndistort, cameraMatrix, distCoeffs, newCamMatix);
 
             // crop the image if we got an roi
@@ -186,41 +200,33 @@ int main()
         }
         else
         {
+            // no disortion, use the normal image
             camFrame.copyTo(camFrameUndistort);
         }
 
-
         // make a gray image
-        cv::Mat gray;
         cvtColor(camFrameUndistort, gray, cv::COLOR_RGB2GRAY);
-        std::vector<std::vector<cv::Point> > quads;
 
-        try
         {
             // find the quads
             quads = GetChessQuads(gray);
             // test draw the contours onto the original image
             DrawConotursRandomColor(camFrameUndistort, quads);
         }
-        catch (cv::Exception &e)
-        {
-            std::cerr << e.msg << std::endl; // output exception message
-        }
 
-        try
         {
             // find the figures
-            DetectFigures(board, camFrameUndistort, gray, quads);
+            DetectFigures(camFrameUndistort, gray, quads, board);
         }
-        catch (cv::Exception &e)
+
+
+        // TODO: Sanity checks for figure Creation
+
         {
-            std::cerr << "Error detecting figures: " << e.msg << std::endl; // output exception message
+            // send the chessboard via rabbitMQ
+            currentBoard.board = board;
+            sender.Send(currentBoard.toString().c_str());
         }
-
-        // recreate the chessboard
-
-        // send the chessboard via rabbitMQ
-        sender.Send(currentBoard.toString().c_str());
 
         // show the input image in a window
         imshow("cam", camFrameUndistort);
@@ -231,6 +237,7 @@ int main()
         if (key == 'c')
         {
             imwrite("camFrame.png", originalImage);
+            imwrite("undistortedCaFrame.png", camFrameUndistort);
         }
         if (key == 'f')
         {
@@ -343,45 +350,67 @@ bool AreSvmsTrained()
 
 }
 
-void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours)
+void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours, std::array<
+    ChessFigure,
+    64> &board)
 {
-    cv::Mat inputCopy, hsvImage;
+    cv::Mat inputCopy;
     inputImage.copyTo(inputCopy);
-
-    cvtColor(originalImage, hsvImage, cv::COLOR_BGR2HLS);
-    std::vector<cv::Mat> hsv;
-    cv::split(hsvImage, hsv);
 
     std::vector<cv::Mat> cells;
     std::vector<cv::Rect> cellsRect;
     std::vector<cv::Mat> cellsColor;
 
-    // use the same size
-    int rectSize = 65;
-
     for (int i = 0; i < chessContours.size(); ++i)
     {
         // seperate the figure fromt he rest
-        cv::Rect boundRect = boundingRect(Mat(chessContours[i]));
-        boundRect.x += 2;
-        boundRect.y += 4;
-        boundRect.width = rectSize;
-        boundRect.height = rectSize;
-
-        cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
-        cv::Mat mask = EyeUtils::GetThresholdImage(imageRoi);
-        cv::Mat descriptor = EyeUtils::GetDescriptor(imageRoi);
-        cv::Mat colorDescriptor = EyeUtils::GetColorDescriptor(imageRoi);
-
-        cells.push_back(descriptor);
-        cellsRect.push_back(boundRect);
-        cellsColor.push_back(colorDescriptor);
-
-        if (writeNextFigures)
+        try
         {
-            // save the image
-            imwrite("image" + std::to_string(i) + ".png", imageRoi);
-            imwrite("image" + std::to_string(i) + "_masked.png", mask);
+            cv::Rect boundRect = boundingRect(Mat(chessContours.at(i)));
+
+            if (!(boundRect.width > 0 && boundRect.width > 0))
+                continue;
+
+            // try to move the rect a bit so it wont show the contour lines of the baord
+            boundRect.x += 2;
+            boundRect.y += 4;
+            boundRect.width = rectSize;
+            boundRect.height = rectSize;
+
+            // check if the boundRect is inside the image plane
+            if (!(0 <= boundRect.x
+                  && 0 <= boundRect.width
+                  && boundRect.x + boundRect.width <= inputCopy.cols
+                  && 0 <= boundRect.y
+                  && 0 <= boundRect.height
+                  && boundRect.y + boundRect.height <= inputCopy.rows))
+            {
+                continue;
+            }
+
+            cv::Mat imageRoi = cv::Mat(inputCopy, boundRect);
+
+            if (!imageRoi.data)
+                continue;
+
+            cv::Mat mask = EyeUtils::GetPreprocessedFigure(imageRoi);
+            cv::Mat descriptor = EyeUtils::GetDescriptor(imageRoi);
+            cv::Mat colorDescriptor = EyeUtils::GetColorDescriptor(imageRoi);
+
+            cells.push_back(descriptor);
+            cellsRect.push_back(boundRect);
+            cellsColor.push_back(colorDescriptor);
+
+            if (writeNextFigures)
+            {
+                // save the image
+                imwrite("image" + std::to_string(i) + ".png", imageRoi);
+                imwrite("image" + std::to_string(i) + "_masked.png", mask);
+            }
+        }
+        catch (std::exception &ex)
+        {
+            std::cerr << ex.what() << '\n';
         }
     }
 
@@ -459,9 +488,13 @@ void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage
                     if (!figureName.empty())
                     {
                         std::string figureColor = "white";
+                        figure.color = WHITE;
 
                         if (blackResponse.at<float>(i, 0))
+                        {
                             figureColor = "black";
+                            figure.color = BLACK;
+                        }
 
                         // Debug: write the figure name into the image
                         putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
@@ -473,6 +506,10 @@ void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage
                                                                                    + 20), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
 
                         //std::cout << figureName << cellsColor.at(i) << std::endl;
+
+
+                        board.at(i) = figure;
+
                     }
 
                 }
@@ -484,8 +521,6 @@ void DetectFigures(ChessFigure chessFigures[], Mat originalImage, Mat inputImage
                 {
                     std::cerr << "Out of Range error: " << ex.what() << '\n';
                 }
-
-                chessFigures[i] = figure;
 
             }
         }

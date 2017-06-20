@@ -1,3 +1,7 @@
+// Taken and adapter from the following Tutorial:
+// http://www.learnopencv.com/image-recognition-and-object-detection-part1/
+// Initially created by SATYA MALLICK
+
 #include <iostream>
 #include <fstream>
 #include <ctime>
@@ -37,7 +41,7 @@ void LoadImageDescriptors(std::string const &pathName, vector<Mat> &trainCells)
             continue;
         }
 
-        //image = EyeUtils::GetThresholdImage(image);
+        //image = EyeUtils::GetPreprocessedFigure(image);
         //imshow("test", edges);
         //waitKey(0);
 
@@ -62,7 +66,7 @@ void LoadImageColors(std::string const &pathName, vector<Mat> &trainCells)
             continue;
         }
 
-        //src = EyeUtils::GetThresholdImage(src);
+        //src = EyeUtils::GetPreprocessedFigure(src);
         Mat descriptor = EyeUtils::GetColorDescriptor(src);
 
         //descriptor = EyeUtils::GetDescriptor(edges);
@@ -82,18 +86,26 @@ void getSVMParams(SVM *svm)
 
 void SVMtrain(Mat &trainMat, vector<int> &trainLabels, Mat &testResponse, Mat &testMat, std::string const &savePath)
 {
-    Ptr<SVM> svm = SVM::create();
-    svm->setGamma(0.9);
-    svm->setC(10);
-    svm->setKernel(SVM::    LINEAR );
-    svm->setType(SVM::C_SVC);
-    Ptr<TrainData> td = TrainData::create(trainMat, ROW_SAMPLE, trainLabels);
-    svm->train(td);
-    //svm->trainAuto(td);
-    svm->save(savePath);
-    svm->predict(testMat, testResponse);
+    try
+    {
+        Ptr<SVM> svm = SVM::create();
+        svm->setGamma(0.9);
+        svm->setC(10);
+        svm->setKernel(SVM::LINEAR);
+        svm->setType(SVM::C_SVC);
+        Ptr<TrainData> td = TrainData::create(trainMat, ROW_SAMPLE, trainLabels);
+        //svm->train(td);
+        svm->trainAuto(td);
+        svm->save(savePath);
+        svm->predict(testMat, testResponse);
 
-    //getSVMParams(svm);
+        //getSVMParams(svm);
+    }
+    catch (std::exception ex)
+    {
+        std::cerr << ex.what() << std::endl;
+    }
+
 }
 
 void SVMevaluate(Mat &testResponse, float &count, float &accuracy, vector<int> &testLabels)
@@ -110,11 +122,17 @@ void SVMevaluate(Mat &testResponse, float &count, float &accuracy, vector<int> &
 }
 
 void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
-               std::initializer_list<std::vector<Mat>> const &otherClasses)
+               std::initializer_list<std::vector<Mat>> const &otherClasses, bool split = false)
 {
     Mat testResponse;
     std::vector<Mat> completeSet;
     std::vector<int> completeLabels;
+
+    std::vector<Mat> trainingData;
+    std::vector<Mat> testData;
+
+    std::vector<int> trainingLabels;
+    std::vector<int> testLabels;
 
     for (auto currMat: firstClass)
     {
@@ -130,21 +148,26 @@ void CreateSVM(std::string const &savePath, std::vector<Mat> const &firstClass,
         }
     }
 
-    //split the data into training and test data
-//    std::size_t const half_size = completeSet.size() / 2;
-//    std::vector<Mat> trainingData(completeSet.begin(), completeSet.begin() + half_size);
-//    std::vector<Mat> testData(completeSet.begin() + half_size, completeSet.end());
-//
-//    std::vector<int> trainingLabels(completeLabels.begin(), completeLabels.begin() + half_size);
-//    std::vector<int> testLabels(completeLabels.begin() + half_size, completeLabels.end());
-//
+    if (split)
+    {
+        //split the data into training and test data
+        std::size_t const half_size = completeSet.size() / 2;
+        trainingData = std::vector<Mat>(completeSet.begin(), completeSet.begin() + half_size);
+        testData = std::vector<Mat>(completeSet.begin() + half_size, completeSet.end());
 
-    // dont split
-    std::vector<Mat> trainingData = completeSet;
-    std::vector<Mat> testData = completeSet;
+        trainingLabels = std::vector<int>(completeLabels.begin(), completeLabels.begin() + half_size);
+        testLabels = std::vector<int>(completeLabels.begin() + half_size, completeLabels.end());
+    }
+    else
+    {
+        // dont split
+        trainingData = completeSet;
+        testData = completeSet;
 
-    std::vector<int> trainingLabels = completeLabels;
-    std::vector<int> testLabels = completeLabels;
+        trainingLabels = completeLabels;
+        testLabels = completeLabels;
+
+    }
 
     // convert it into a single Mat
     int colSize = completeSet[0].cols;
@@ -177,19 +200,21 @@ int main()
     LoadImageColors("../train/chessBoard/black/", blackDescriptors);
     LoadImageColors("../train/chessBoard/white/", whiteDescriptors);
 
+    bool split = true;
+
     // one vs Rest
     CreateSVM("king.yml", kingDescritpors, {queenDescritpors, rookDescritpors, bishopDescritpors,
-                                            knightDescritpors, pawnDescritpors, emptyDescritpors});
+                                            knightDescritpors, pawnDescritpors, emptyDescritpors}, split);
     CreateSVM("queen.yml", queenDescritpors, {kingDescritpors, rookDescritpors, bishopDescritpors,
-                                              knightDescritpors, pawnDescritpors, emptyDescritpors});
+                                              knightDescritpors, pawnDescritpors, emptyDescritpors}, split);
     CreateSVM("rook.yml", rookDescritpors, {kingDescritpors, queenDescritpors, bishopDescritpors,
-                                            knightDescritpors, pawnDescritpors, emptyDescritpors});
+                                            knightDescritpors, pawnDescritpors, emptyDescritpors}, split);
     CreateSVM("bishop.yml", bishopDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors,
-                                                knightDescritpors, pawnDescritpors, emptyDescritpors});
+                                                knightDescritpors, pawnDescritpors, emptyDescritpors}, split);
     CreateSVM("knight.yml", knightDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
-                                                pawnDescritpors, emptyDescritpors});
+                                                pawnDescritpors, emptyDescritpors}, split);
     CreateSVM("pawn.yml", pawnDescritpors, {kingDescritpors, queenDescritpors, rookDescritpors, bishopDescritpors,
-                                            knightDescritpors, emptyDescritpors});
+                                            knightDescritpors, emptyDescritpors} ,split);
 
     CreateSVM("black.yml", blackDescriptors, {whiteDescriptors});
 

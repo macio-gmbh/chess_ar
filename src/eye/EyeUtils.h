@@ -16,14 +16,14 @@ using namespace cv;
 namespace EyeUtils
 {
 
-cv::Mat GetThresholdImage(cv::Mat &image)
+cv::Mat GetPreprocessedFigure(cv::Mat &image)
 {
     Mat eqHist, blur, thres;
-    equalizeHist(eqHist, eqHist);
-    GaussianBlur(image, blur, Size(5, 5), 0);
-    cv::threshold(blur, thres, 0, 255, THRESH_BINARY | THRESH_OTSU);
+    equalizeHist(image, eqHist);
+    //GaussianBlur(image, blur, Size(5, 5), 0);
+    //cv::threshold(blur, thres, 0, 255, THRESH_BINARY | THRESH_OTSU);
 
-    return thres;
+    return eqHist;
 }
 
 void ConvertVectortoMatrix(std::vector<float> &vector, cv::Mat &mat)
@@ -78,23 +78,32 @@ cv::Mat GetDescriptor(cv::Mat &image)
 
 cv::Mat GetColorDescriptor(cv::Mat &image)
 {
-    int histSize = 256;
-    float range[] = {0, 256};
-    const float *histRange = {range};
-    bool uniform = true;
-    bool accumulate = false;
-
-    cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
-    cv::Point circleCenter(mask.cols / 2, mask.rows / 2);
-    int radius = 20;
-    cv::circle(mask, circleCenter, radius, CV_RGB(255, 255, 255));
-    cv::Mat imagePart = cv::Mat::zeros(image.size(), image.type());
-    image.copyTo(imagePart, mask);
-
-    cv::Mat images[] = {image};
     cv::Mat hist;
-    calcHist(images, 1, 0, Mat(), hist, 1, &histSize, &histRange, uniform, accumulate);
-    transpose(hist, hist);
+
+    try
+    {
+        int histSize = 256;
+        float range[] = {0, 256};
+        const float *histRange = {range};
+        bool uniform = true;
+        bool accumulate = false;
+
+        cv::Mat mask = cv::Mat::zeros(image.size(), CV_8UC1);
+        cv::Point circleCenter(mask.cols / 2, mask.rows / 2);
+        int radius = 20;
+        cv::circle(mask, circleCenter, radius, CV_RGB(255, 255, 255));
+        cv::Mat imagePart = cv::Mat::zeros(image.size(), image.type());
+        image.copyTo(imagePart, mask);
+
+        cv::Mat images[] = {image};
+        calcHist(images, 1, 0, Mat(), hist, 1, &histSize, &histRange, uniform, accumulate);
+        transpose(hist, hist);
+    }
+    catch (std::exception &ex)
+    {
+        std::cerr << ex.what() << std::endl;
+    }
+
     return hist;
 
 //    cv::Scalar mean, stddev;
