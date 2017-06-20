@@ -6,7 +6,7 @@
 #include "../shared_lib/Zobrist.h"
 #include "../shared_lib/rabbitmq/RabbitMQSender.h"
 #include "../shared_lib/rabbitmq/RabbitMQReceiver.h"
-#include "ChessEngneCommunicator.h"
+#include "ChessEngineCommunicator.h"
 
 
 int main() {
@@ -23,7 +23,7 @@ int main() {
 
     Zobrist currentZobrist;
 
-    ChessEngneCommunicator engineCommunicator = ChessEngneCommunicator();
+    ChessEngineCommunicator engineCommunicator = ChessEngineCommunicator();
     RabbitMQSender guiSender("localhost", 5672, "ControllerToGui");
     RabbitMQReceiver eyeReceiver("localhost",5672, "EyeToController");
 

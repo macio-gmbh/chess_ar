@@ -2,18 +2,18 @@
 // Created by lisa on 6/19/17.
 //
 
-#include "ChessEngneCommunicator.h"
+#include "ChessEngineCommunicator.h"
 
-ChessEngneCommunicator::ChessEngneCommunicator() {}
+ChessEngineCommunicator::ChessEngineCommunicator() {}
 
-ChessEngneCommunicator::ChessEngneCommunicator(std::string chessEngineName) {
+ChessEngineCommunicator::ChessEngineCommunicator(std::string chessEngineName) {
     engine = chessEngineName;
 }
 
 
 // source: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
 // Includes required for SO example: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
-std::string ChessEngneCommunicator::exec(const char* cmd) {
+std::string ChessEngineCommunicator::exec(const char* cmd) {
     std::array<char, 128> buffer;
     std::string result;
     std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
@@ -25,7 +25,7 @@ std::string ChessEngneCommunicator::exec(const char* cmd) {
     return result;
 }
 
-std::string ChessEngneCommunicator::askStockfishForBestMove(const char* fen) {
+std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
     std::string cmd = "stockfish << EOF\n";
     cmd += "setoption name Hash value 128\n";
     cmd += "setoption name threads value 1\n";
