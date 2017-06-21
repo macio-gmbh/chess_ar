@@ -41,7 +41,7 @@ void LoadImageDescriptors(std::string const &pathName, vector<Mat> &trainCells)
             continue;
         }
 
-        //image = EyeUtils::GetPreprocessedFigure(image);
+        image = EyeUtils::GetPreprocessedFigure(image);
         //imshow("test", edges);
         //waitKey(0);
 

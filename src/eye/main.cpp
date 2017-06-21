@@ -40,7 +40,6 @@ double houghLinesThreshold = 61;
 double minPeri = 220;
 double maxPeri = 288;
 double periScale = 0.05;
-int rectSize = 65;
 
 bool writeNextFigures = false;
 
@@ -93,7 +92,6 @@ int main()
             minPeri = config.get("quadDetection.minPeri", minPeri);
             maxPeri = config.get("quadDetection.maxPeri", maxPeri);
             periScale = config.get("quadDetection.periScale", periScale);
-            rectSize = config.get("quadDetection.rectSize", rectSize);
         }
         catch (std::exception &ex)
         {
@@ -243,7 +241,9 @@ int main()
 
         {
             // send the chessboard via rabbitMQ
+            auto boardBeofreString = currentBoard.toString();
             currentBoard.board = board;
+            auto boardAfterString = currentBoard.toString();
             sender.Send(currentBoard.toString().c_str());
         }
 
@@ -366,7 +366,6 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
     cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
     Canny(grayImage, edges, cannyThreshold1, cannyThreshold2, 3);
 
-
     if (debugDraw)
     {
         imshow("canny", edges);
@@ -389,7 +388,6 @@ std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
         pt2.y = cvRound(y0 - 1000 * (a));
         line(linesMat, pt1, pt2, cv::Scalar(255, 255, 255));
     }
-
 
     if (debugDraw)
     {
@@ -480,11 +478,6 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
             if (!(boundRect.width > 0 && boundRect.width > 0))
                 continue;
 
-            // try to move the rect a bit so it wont show the contour lines of the baord
-            boundRect.x += 2;
-            boundRect.y += 4;
-            boundRect.width = rectSize;
-            boundRect.height = rectSize;
 
             // check if the boundRect is inside the image plane
             if (!(0 <= boundRect.x
@@ -501,6 +494,9 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
 
             if (!imageRoi.data)
                 continue;
+
+            // resize the image so its always 65 (was trained with 65er size)
+            resize(imageRoi, imageRoi, Size(65,65), 0, 0);
 
             cv::Mat mask = EyeUtils::GetPreprocessedFigure(imageRoi);
             cv::Mat descriptor = EyeUtils::GetDescriptor(imageRoi);
@@ -525,117 +521,124 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
 
     if (cells.size() > 0 && cells.size() == 64)
     {
-        Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
-        EyeUtils::MergeMatrixVector(mergedMat, cells);
-
-        Mat colorMergedMat(cellsColor.size(), cellsColor[0].cols, CV_32FC1);
-        EyeUtils::MergeMatrixVector(colorMergedMat, cellsColor);
-
-        // check the svms if a figure is detected
-        if (AreSvmsTrained() && mergedMat.data)
+        try
         {
-            Mat bishopResponse, knightResponse, pawnResponse, queenResponse,
-                rookResponse, kingResponse, blackResponse;
+            Mat mergedMat(cells.size(), cells[0].cols, CV_32FC1);
+            EyeUtils::MergeMatrixVector(mergedMat, cells);
 
-            bishopSvm->predict(mergedMat, bishopResponse);
-            knightSvm->predict(mergedMat, knightResponse);
-            pawnSvm->predict(mergedMat, pawnResponse);
-            queenSvm->predict(mergedMat, queenResponse);
-            rookSvm->predict(mergedMat, rookResponse);
-            kingSvm->predict(mergedMat, kingResponse);
-            blackSvm->predict(colorMergedMat, blackResponse);
+            Mat colorMergedMat(cellsColor.size(), cellsColor[0].cols, CV_32FC1);
+            EyeUtils::MergeMatrixVector(colorMergedMat, cellsColor);
 
-            int responseLength = bishopResponse.rows;
-
-            for (int i = 0; i < responseLength; i++)
+            // check the svms if a figure is detected
+            if (AreSvmsTrained() && mergedMat.data)
             {
-                std::string figureName = "";
-                ChessFigure figure;
+                Mat bishopResponse, knightResponse, pawnResponse, queenResponse,
+                    rookResponse, kingResponse, blackResponse;
 
-                try
+                bishopSvm->predict(mergedMat, bishopResponse);
+                knightSvm->predict(mergedMat, knightResponse);
+                pawnSvm->predict(mergedMat, pawnResponse);
+                queenSvm->predict(mergedMat, queenResponse);
+                rookSvm->predict(mergedMat, rookResponse);
+                kingSvm->predict(mergedMat, kingResponse);
+                blackSvm->predict(colorMergedMat, blackResponse);
+
+                int responseLength = bishopResponse.rows;
+
+                for (int i = 0; i < responseLength; i++)
                 {
-                    auto isBishop = bishopResponse.at<float>(i, 0);
-                    auto isKnight = knightResponse.at<float>(i, 0);
-                    auto isPawn = pawnResponse.at<float>(i, 0);
-                    auto isQueen = queenResponse.at<float>(i, 0);
-                    auto isRook = rookResponse.at<float>(i, 0);
-                    auto isKing = kingResponse.at<float>(i, 0);
+                    std::string figureName = "";
+                    ChessFigure figure;
 
-                    cv::Rect boundRect = cellsRect.at(i);
+                    try
+                    {
+                        auto isBishop = bishopResponse.at<float>(i, 0);
+                        auto isKnight = knightResponse.at<float>(i, 0);
+                        auto isPawn = pawnResponse.at<float>(i, 0);
+                        auto isQueen = queenResponse.at<float>(i, 0);
+                        auto isRook = rookResponse.at<float>(i, 0);
+                        auto isKing = kingResponse.at<float>(i, 0);
 
-                    if (isPawn)
-                    {
-                        figureName = "PAWN";
-                        figure.figure_type = PAWN;
-                    }
-                    if (isKing)
-                    {
-                        figureName = "KING";
-                        figure.figure_type = KING;
-                    }
-                    if (isQueen)
-                    {
-                        figureName = "QUEEN";
-                        figure.figure_type = QUEEN;
-                    }
-                    if (isRook)
-                    {
-                        figureName = "ROOK";
-                        figure.figure_type = ROOK;
-                    }
-                    if (isBishop)
-                    {
-                        figureName = "BISHOP";
-                        figure.figure_type = BISHOP;
-                    }
-                    if (isKnight)
-                    {
-                        figureName = "KNIGHT";
-                        figure.figure_type = KNIGHT;
-                    }
+                        cv::Rect boundRect = cellsRect.at(i);
 
-                    if (!figureName.empty())
-                    {
-                        std::string figureColor = "white";
-                        figure.color = WHITE;
-
-                        if (blackResponse.at<float>(i, 0))
+                        if (isPawn)
                         {
-                            figureColor = "black";
-                            figure.color = BLACK;
+                            figureName = "PAWN";
+                            figure.figure_type = PAWN;
+                        }
+                        if (isKing)
+                        {
+                            figureName = "KING";
+                            figure.figure_type = KING;
+                        }
+                        if (isQueen)
+                        {
+                            figureName = "QUEEN";
+                            figure.figure_type = QUEEN;
+                        }
+                        if (isRook)
+                        {
+                            figureName = "ROOK";
+                            figure.figure_type = ROOK;
+                        }
+                        if (isBishop)
+                        {
+                            figureName = "BISHOP";
+                            figure.figure_type = BISHOP;
+                        }
+                        if (isKnight)
+                        {
+                            figureName = "KNIGHT";
+                            figure.figure_type = KNIGHT;
                         }
 
-                        // Debug: write the figure name into the image
-                        putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
-                            .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+                        if (!figureName.empty())
+                        {
+                            std::string figureColor = "white";
+                            figure.color = WHITE;
 
-                        // write the color
-                        putText(originalImage, figureColor, cv::Point(boundRect.x, boundRect
-                                                                                       .y
-                                                                                   + 20), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+                            if (blackResponse.at<float>(i, 0))
+                            {
+                                figureColor = "black";
+                                figure.color = BLACK;
+                            }
 
-                        //std::cout << figureName << cellsColor.at(i) << std::endl;
+                            // Debug: write the figure name into the image
+                            putText(originalImage, figureName, cv::Point(boundRect.x, boundRect
+                                .y), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+
+                            // write the color
+                            putText(originalImage, figureColor, cv::Point(boundRect.x, boundRect
+                                                                                           .y
+                                                                                       + 20), FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 2);
+
+                            //std::cout << figureName << cellsColor.at(i) << std::endl;
 
 
-                        board.at(i) = figure;
+                            board.at(i) = figure;
 
+                        }
+
+                    }
+                    catch (const std::out_of_range &ex)
+                    {
+                        std::cerr << "Out of Range error: " << ex.what() << '\n';
+                    }
+                    catch (const cv::Exception &ex)
+                    {
+                        std::cerr << "Out of Range error: " << ex.what() << '\n';
                     }
 
                 }
-                catch (const std::out_of_range &ex)
-                {
-                    std::cerr << "Out of Range error: " << ex.what() << '\n';
-                }
-                catch (const cv::Exception &ex)
-                {
-                    std::cerr << "Out of Range error: " << ex.what() << '\n';
-                }
-
+            }
+            else
+            {
+                //std::cout << "No data " << std::endl;
             }
         }
-        else
+        catch (Exception &ex)
         {
-            //std::cout << "No data " << std::endl;
+            std::cerr << "Error while detecting the figures: " << ex.what() << std::endl;
         }
     }
     writeNextFigures = false;

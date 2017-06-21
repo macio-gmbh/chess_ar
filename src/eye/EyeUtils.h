@@ -51,26 +51,29 @@ void MergeMatrixVector(Mat &mat, std::vector<Mat> &vector)
 
 cv::Mat GetDescriptor(cv::Mat &image)
 {
+    Mat descriptorMat;
 
-    HOGDescriptor hog(
-        Size(60, 60), //winSize
-        Size(8, 8), //blocksize
-        Size(4, 4), //blockStride,
-        Size(8, 8), //cellSize,
-        9, //nbins,
-        1, //derivAper,
-        -1, //winSigma,
-        0, //histogramNormType,
-        0.2, //L2HysThresh,
-        0,//gammal correction,
-        64,//nlevels=64
-        1);
+    if (image.data)
+    {
+        HOGDescriptor hog(
+            Size(60, 60), //winSize
+            Size(8, 8), //blocksize
+            Size(4, 4), //blockStride,
+            Size(8, 8), //cellSize,
+            9, //nbins,
+            1, //derivAper,
+            -1, //winSigma,
+            0, //histogramNormType,
+            0.2, //L2HysThresh,
+            0,//gammal correction,
+            64,//nlevels=64
+            1);
 
-    std::vector<float> descriptors;
-    hog.compute(image, descriptors);
-    Mat descriptorMat(1, descriptors.size(), CV_32FC1);
-    ConvertVectortoMatrix(descriptors, descriptorMat);
-
+        std::vector<float> descriptors;
+        hog.compute(image, descriptors);
+        descriptorMat = Mat(1, descriptors.size(), CV_32FC1);
+        ConvertVectortoMatrix(descriptors, descriptorMat);
+    }
     return descriptorMat;
 
 //    return calcFourierDescriptor(image);
