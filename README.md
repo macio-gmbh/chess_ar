@@ -28,7 +28,7 @@ You also need to set some extra Paths for Windows (like BOOST_ROOT and OpenCV_DI
 
 Also if you want to run the code (seperate modules communicate via a Message broker):
 * [RabbitMQ Server](https://www.rabbitmq.com/download.html)
-* [Stockfish UCI Engine for suggested moves]https://github.com/official-stockfish/Stockfish
+* [Stockfish UCI Engine for suggested moves](https://github.com/official-stockfish/Stockfish)
 
 ### How to build the code:
 
@@ -41,7 +41,22 @@ make
 
 ## Usage
 Every module needs to be started to be fully operational.
+The Gui needs to be started first, then the Eye and finally the controller:
 
+```
+./gui
+./eye
+./controller
+```
+
+The Eye releys on pretrained SVMs for piece and color recognition.
+If there are no trained SVMs, the train programm need to be started before the eye to create the training set:
+
+```
+./train
+```
+
+The files for training (images) are in the folder `train`.
 
 ## Project structure
 * `src` Contains all the src files with seperate CMake Modules.
