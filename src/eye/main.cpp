@@ -524,7 +524,7 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
         }
     }
 
-    if (cells.size() > 0 && cells.size() == 64)
+    if (cells.size() > 0 && cells.size() > 50)
     {
         try
         {
