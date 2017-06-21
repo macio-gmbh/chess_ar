@@ -5,8 +5,7 @@
 // calculating a hash value.
 // This version is able to calculate a Zobrist hash from a FEN notation or from the Chess Board.
 //
-// Zobrist Key Values copied from here: https://github.com/albertoruibal/carballo/blob/master/core/src/main/java/com/alonsoruibal/chess/hash/ZobristKey.java
-//
+////
 //
 
 #ifndef CHESS_AR_ZOBRIST_H

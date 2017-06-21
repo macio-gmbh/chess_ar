@@ -20,6 +20,7 @@ int main() {
     ChessBoard lastBoard= ChessBoard(initialBoard);
 
     std::cout<< "Initial Setup Test: " << currentBoard.toString() <<std::endl;
+    bool inital = true;
 
     Zobrist currentZobrist;
 
@@ -49,20 +50,22 @@ int main() {
       std::string nextBoard = eyeReceiver.Receive();
       Zobrist newZobrist(nextBoard);
 
-      if(currentZobrist.zobristHash != newZobrist.zobristHash) {
+      if(currentZobrist.zobristHash != newZobrist.zobristHash || inital) {
+          inital = false;
+          if(!inital ) {
+              lastBoard = currentBoard;
+              currentZobrist = newZobrist;
+              currentBoard = ChessBoard(nextBoard);
+              if (currentColor == ChessColor::WHITE) {
+                  currentColor = ChessColor::BLACK;
 
-           lastBoard = currentBoard;
-           currentZobrist = newZobrist;
-           currentBoard = ChessBoard(nextBoard);
-          if(currentColor == ChessColor::WHITE) {
-              currentColor = ChessColor::BLACK;
-
-          } else {
-              currentColor = ChessColor::WHITE;
-              fullMove +=1;
+              } else {
+                  currentColor = ChessColor::WHITE;
+                  fullMove += 1;
+              }
+              currentBoard.fullMove = fullMove;
+              currentBoard.currentMove = currentColor;
           }
-          currentBoard.fullMove = fullMove;
-          currentBoard.currentMove = currentColor;
             /*
              * TODO:
              * 1. Check if the next board is a valid
