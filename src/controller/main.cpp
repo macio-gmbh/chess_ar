@@ -51,7 +51,7 @@ int main() {
       Zobrist newZobrist(nextBoard);
 
       if(currentZobrist.zobristHash != newZobrist.zobristHash || inital) {
-          inital = false;
+
           if(!inital ) {
               lastBoard = currentBoard;
               currentZobrist = newZobrist;
@@ -65,8 +65,10 @@ int main() {
               }
               currentBoard.fullMove = fullMove;
               currentBoard.currentMove = currentColor;
+          } else {
+              inital = false;
           }
-            /*
+          /*
              * TODO:
              * 1. Check if the next board is a valid
              * 2. Check if there is still a casteling right
