@@ -18,6 +18,8 @@
 #include <boost/property_tree/ini_parser.hpp>
 
 const bool USE_STATIC_IMAGE = false;
+const boost::filesystem::path imagePath = "./output/";
+
 const boost::filesystem::path iniPath = "../config/eye.ini";
 boost::filesystem::path staticImagePath = "../train/chessBoard/chess.png";
 boost::filesystem::path calibPath = "../config/logitech_c920.yml";
@@ -61,6 +63,9 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
 
 int main()
 {
+    // create the image output folder
+    boost::filesystem::create_directories(imagePath);
+
     // load the config ini file
     boost::property_tree::ptree config;
 
@@ -256,8 +261,8 @@ int main()
         char key = cv::waitKey(30);
         if (key == 'c')
         {
-            imwrite("originalImage.png", originalImage);
-            imwrite("chessBoardRoi.png", chessBoardRoi);
+            imwrite(imagePath.generic_string() + "originalImage.png", originalImage);
+            imwrite(imagePath.generic_string() + "chessBoardRoi.png", chessBoardRoi);
 
         }
         if (key == 'f')
@@ -509,8 +514,8 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
             if (writeNextFigures)
             {
                 // save the image
-                imwrite("image" + std::to_string(i) + ".png", imageRoi);
-                imwrite("image" + std::to_string(i) + "_masked.png", mask);
+                imwrite(imagePath.generic_string() + "image" + std::to_string(i) + ".png", imageRoi);
+                //imwrite(imagePath.generic_string() + "image" + std::to_string(i) + "_masked.png", mask);
             }
         }
         catch (std::exception &ex)
