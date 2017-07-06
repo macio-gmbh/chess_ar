@@ -301,13 +301,20 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
     grayImage.copyTo(lineDebug);
 
     std::vector<Vec4i> lines;
-    HoughLinesP(edges, lines, chessHoughLinesRho, chessHoughLinesTheta, chessHoughLinesThreshold, 20, 0.01);
+    HoughLinesP(edges, lines, chessHoughLinesRho, chessHoughLinesTheta, chessHoughLinesThreshold, 10, 1);
 
     cv::Size s = edges.size();
     int leftX = s.width;
     int rightX = 0;
     int topY = 0;
     int bottomY = s.height;
+
+    // top and buttom in image coordinates, 0 is upper left corner
+    // initial parameters ar flipped so it can find the max
+    Point2f topLeft = Point2f(leftX, bottomY);
+    Point2f topRight = Point2f(rightX, bottomY);
+    Point2f bottomLeft = Point2f(leftX, topY);
+    Point2f bottomRight = Point2f(rightX, topY);
 
     for (auto currentLine : lines)
     {
@@ -341,16 +348,13 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
 
         //Point[][] quad = new Point[1][];
         //quad[0] = approx;
-        if (pt1.x < leftX)
-        {
-            leftX = pt1.x;
-        }
-        else if (pt2.x > rightX)
-        {
-            rightX = pt2.x;
-        }
 
-        if (pt2.y > topY)
+        // find the outline, first check if its top or bottom
+        if (pt1.y > topY)
+        {
+            topY = pt1.y;
+        }
+        else if (pt2.y > topY)
         {
             topY = pt2.y;
         }
@@ -358,30 +362,99 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
         {
             bottomY = pt1.y;
         }
+        else if (pt2.y < bottomY)
+        {
+            bottomY = pt2.y;
+        }
     }
 
-    Point2f topLeft = Point2f(leftX, bottomY);
-    Point2f topRight = Point2f(rightX, bottomY);
-    Point2f bottomLeft = Point2f(leftX, topY);
-    Point2f bottomRight = Point2f(rightX, topY);
+    // we need to loop through twice or we'll be missing some lines
+    for (auto currentLine : lines)
+    {
+        Point pt1 = Point(currentLine[0], currentLine[1]);
+        Point pt2 = Point(currentLine[2], currentLine[3]);
+
+        // if its top or bottom, find left and right
+        // Top and bottom right or left could be different (depends on camera angle)
+        // also lines are short so the buttom y line could be in the middle, thats why we need to recheck the coordinates
+        int tempLeftX, tempRightX;
+        int maxDist = 100;
+        bool bottom = false;
+        if (abs(pt1.y - bottomY) < maxDist || abs(pt2.y - bottomY) < maxDist)
+        {
+            tempLeftX = bottomLeft.x;
+            tempRightX = bottomRight.x;
+            bottom = true;
+        }
+        else if (abs(pt1.y - topY) < maxDist || abs(pt2.y - topY) < maxDist)
+        {
+            tempLeftX = topLeft.x;
+            tempRightX = topRight.x;
+        }
+        else
+        {
+            // must be a line somewhere else, but not at bottom or top
+            continue;
+        }
+
+        if (pt1.x < tempLeftX)
+        {
+            tempLeftX = pt1.x;
+        }
+        else if (pt2.x < tempLeftX)
+        {
+            tempLeftX = pt2.x;
+        }
+        else if (pt1.x > tempRightX)
+        {
+            tempRightX = pt1.x;
+        }
+        else if (pt2.x > tempRightX)
+        {
+            tempRightX = pt2.x;
+        }
+
+        if (bottom)
+        {
+            bottomLeft.x = tempLeftX;
+            bottomRight.x = tempRightX;
+        }
+        else
+        {
+            topLeft.x = tempLeftX;
+            topRight.x = tempRightX;
+        }
+
+    }
+
+    topLeft.
+        y = topY;
+    topRight.
+        y = topY;
+    bottomLeft.
+        y = bottomY;
+    bottomRight.
+        y = bottomY;
 
     int size = 800;
     int height = abs(topLeft.y - bottomLeft.y);
     int width = abs(topLeft.x - topRight.x);
 
     // check if its quadratic
-    if (abs(height - width) < 10)
+    //if (false)
+    if (abs(height - width) < 25)
     {
-        Point2f newtopLeft = Point2f(0, 0);
-        Point2f newtopRight = Point2f(size, 0);
-        Point2f newbottomLeft = Point2f(0, size);
-        Point2f newbottomRight = Point2f(size, size);
+        Point2f newbottomLeft = Point2f(0, 0);
+        Point2f newbottomRight = Point2f(size, 0);
+        Point2f newtopLeft = Point2f(0, size);
+        Point2f newtopRight = Point2f(size, size);
 
         Point2f src[] = {topLeft, topRight, bottomLeft, bottomRight};
         Point2f dst[] = {newtopLeft, newtopRight, newbottomLeft, newbottomRight};
 
         Mat m = cv::getPerspectiveTransform(src, dst);
-        cv::warpPerspective(originalImage, undisorted, m, cv::Size(size, size));
+        cv::warpPerspective(originalImage, undisorted, m, cv::Size(size, size)
+        );
     }
     else
     {
@@ -398,7 +471,8 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
             imshow("lineDebug", lineDebug);
     }
 
-    return undisorted;
+    return
+        undisorted;
 }
 
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
@@ -551,7 +625,7 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
             {
                 // save the image
                 imwrite(imagePath.generic_string() + "image" + std::to_string(i) + ".png", imageRoi);
-                //imwrite(imagePath.generic_string() + "image" + std::to_string(i) + "_masked.png", mask);
+                imwrite(imagePath.generic_string() + "image" + std::to_string(i) + "_masked.png", mask);
             }
         }
         catch (std::exception &ex)
@@ -588,7 +662,7 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
 
                 for (int i = 0; i < responseLength; i++)
                 {
-                    if (responseLength >= 64)
+                    if (i >= 64)
                     {
                         break;
                     }

@@ -94,8 +94,8 @@ void SVMtrain(Mat &trainMat, vector<int> &trainLabels, Mat &testResponse, Mat &t
         svm->setKernel(SVM::LINEAR);
         svm->setType(SVM::C_SVC);
         Ptr<TrainData> td = TrainData::create(trainMat, ROW_SAMPLE, trainLabels);
-        svm->train(td);
-        //svm->trainAuto(td);
+        // svm->train(td);
+        svm->trainAuto(td);
         svm->save(savePath);
         svm->predict(testMat, testResponse);
 
