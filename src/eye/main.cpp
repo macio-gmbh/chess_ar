@@ -57,9 +57,8 @@ Ptr<cv::ml::SVM> blackSvm;
 cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage);
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage);
 void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> > contours);
-void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours, std::array<
-    ChessFigure,
-    64> &board);
+void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours,
+                   std::array<ChessFigure, 64> &board);
 
 int main()
 {
@@ -162,6 +161,7 @@ int main()
     // local variables need for the main loop
     cv::Mat camFrame, gray, chessImage, originalImage, camFrameUndistort;
     std::vector<std::vector<cv::Point> > quads;
+    std::vector<cv::Mat> chessFields;
 
     bool staticImage = false;
 
@@ -223,10 +223,9 @@ int main()
 
         camFrame.copyTo(chessBoardRoi);
 
-//        // TODO: needs tweaking, not really persistent
-//        {
-//            chessBoardRoi = FindChessboard(originalImage, gray);
-//        }
+        {
+            chessBoardRoi = FindChessboard(originalImage, gray);
+        }
 
         cvtColor(chessBoardRoi, grayBoardRoi, cv::COLOR_RGB2GRAY);
         {
@@ -290,10 +289,14 @@ int main()
     return 0;
 }
 
+// TODO: needs tweaking, not really persistent
 cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
 {
-    cv::Mat edges, chessBoardRoi, lineDebug, undisorted;
-    Canny(grayImage, edges, chessCannyThreshold1, chessCannyThreshold2);
+    cv::Mat edges, chessBoardRoi, lineDebug, undisorted, blur;
+    cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
+
+    GaussianBlur(grayImage, blur, Size(5, 5), 0);
+    Canny(blur, edges, chessCannyThreshold1, chessCannyThreshold2);
 
     grayImage.copyTo(lineDebug);
 
@@ -311,6 +314,29 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
         Point pt1 = Point(currentLine[0], currentLine[1]);
         Point pt2 = Point(currentLine[2], currentLine[3]);
 
+        double angle = atan2((double) pt2.y - pt1.y,
+                             (double) pt2.x - pt1.x);
+
+        double degress = abs(angle * 180 / CV_PI);
+
+        if (degress >= 85 && degress <= 93)
+        {
+            //vertical line
+        }
+        else if ((degress >= 0 && degress <= 3) || degress >= 357)
+        {
+            //horizontal line
+        }
+        else
+        {
+            continue;
+        }
+
+
+        // only find horizontal or vertical lines
+
+
+        // draw the line for debugging into the debug window
         line(lineDebug, pt1, pt2, cv::Scalar(255, 255, 255), 3);
 
         //Point[][] quad = new Point[1][];
@@ -340,17 +366,28 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
     Point2f bottomRight = Point2f(rightX, topY);
 
     int size = 800;
+    int height = abs(topLeft.y - bottomLeft.y);
+    int width = abs(topLeft.x - topRight.x);
 
-    Point2f newtopLeft = Point2f(0, 0);
-    Point2f newtopRight = Point2f(size, 0);
-    Point2f newbottomLeft = Point2f(0, size);
-    Point2f newbottomRight = Point2f(size, size);
+    // check if its quadratic
+    if (abs(height - width) < 10)
+    {
+        Point2f newtopLeft = Point2f(0, 0);
+        Point2f newtopRight = Point2f(size, 0);
+        Point2f newbottomLeft = Point2f(0, size);
+        Point2f newbottomRight = Point2f(size, size);
 
-    Point2f src[] = {topLeft, topRight, bottomLeft, bottomRight};
-    Point2f dst[] = {newtopLeft, newtopRight, newbottomLeft, newbottomRight};
+        Point2f src[] = {topLeft, topRight, bottomLeft, bottomRight};
+        Point2f dst[] = {newtopLeft, newtopRight, newbottomLeft, newbottomRight};
 
-    Mat m = cv::getPerspectiveTransform(src, dst);
-    cv::warpPerspective(originalImage, undisorted, m, cv::Size(size, size));
+        Mat m = cv::getPerspectiveTransform(src, dst);
+        cv::warpPerspective(originalImage, undisorted, m, cv::Size(size, size));
+    }
+    else
+    {
+        // we havent found the board (needs to be quadratic) so return the original image
+        undisorted = originalImage;
+    }
 
     if (debugDraw)
     {
@@ -462,9 +499,8 @@ bool AreSvmsTrained()
 
 }
 
-void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours, std::array<
-    ChessFigure,
-    64> &board)
+void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours,
+                   std::array<ChessFigure, 64> &board)
 {
     cv::Mat inputCopy;
     inputImage.copyTo(inputCopy);
@@ -501,7 +537,7 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
                 continue;
 
             // resize the image so its always 65 (was trained with 65er size)
-            resize(imageRoi, imageRoi, Size(65,65), 0, 0);
+            resize(imageRoi, imageRoi, Size(65, 65), 0, 0);
 
             cv::Mat mask = EyeUtils::GetPreprocessedFigure(imageRoi);
             cv::Mat descriptor = EyeUtils::GetDescriptor(imageRoi);
@@ -552,6 +588,11 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
 
                 for (int i = 0; i < responseLength; i++)
                 {
+                    if (responseLength >= 64)
+                    {
+                        break;
+                    }
+
                     std::string figureName = "";
                     ChessFigure figure;
 
