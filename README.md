@@ -39,6 +39,16 @@ cmake --build .
 make
 ```
 
+### Doxygen
+To create the Doxygen documentation, use theres an included Doxyfile under the doxygen folder:
+```
+cd doxygen
+doxygen Doxyfile
+```
+
+Doxygen will then create the documentation as HTML. It needs [graphviz](http://www.graphviz.org/) to create the diagrams.
+
+
 ## Usage
 Every module needs to be started to be fully operational.
 The Gui needs to be started first, then the Eye and finally the controller:
