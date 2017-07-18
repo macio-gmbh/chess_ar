@@ -44,6 +44,8 @@ double maxPeri = 288;
 double periScale = 0.05;
 
 bool writeNextFigures = false;
+cv::Mat lastUndistortedBoard;
+int framesSinceLastBoard = 0;
 
 Ptr<cv::ml::SVM> bishopSvm;
 Ptr<cv::ml::SVM> knightSvm;
@@ -60,11 +62,8 @@ void DrawConotursRandomColor(cv::Mat image, std::vector<std::vector<cv::Point> >
 void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Point>> chessContours,
                    std::array<ChessFigure, 64> &board);
 
-int main()
+void LoadConfig()
 {
-    // create the image output folder
-    boost::filesystem::create_directories(imagePath);
-
     // load the config ini file
     boost::property_tree::ptree config;
 
@@ -82,11 +81,11 @@ int main()
             calibPath = config.get("general.calibPath", calibPath);
             cameraIndex = config.get("general.cameraIndex", cameraIndex);
 
-            chessCannyThreshold1 = config.get("quadDetection.chessCannyThreshold1", chessCannyThreshold1);
-            chessCannyThreshold2 = config.get("quadDetection.chessCannyThreshold2", chessCannyThreshold2);
-            chessHoughLinesRho = config.get("quadDetection.chessHoughLinesRho", chessHoughLinesRho);
-            chessHoughLinesTheta = config.get("quadDetection.chessHoughLinesTheta", chessHoughLinesTheta);
-            chessHoughLinesThreshold = config.get("quadDetection.chessHoughLinesThreshold", chessHoughLinesThreshold);
+            chessCannyThreshold1 = config.get("chessDetection.chessCannyThreshold1", chessCannyThreshold1);
+            chessCannyThreshold2 = config.get("chessDetection.chessCannyThreshold2", chessCannyThreshold2);
+            chessHoughLinesRho = config.get("chessDetection.chessHoughLinesRho", chessHoughLinesRho);
+            chessHoughLinesTheta = config.get("chessDetection.chessHoughLinesTheta", chessHoughLinesTheta);
+            chessHoughLinesThreshold = config.get("chessDetection.chessHoughLinesThreshold", chessHoughLinesThreshold);
 
             cannyThreshold1 = config.get("quadDetection.cannyThreshold1", cannyThreshold1);
             cannyThreshold2 = config.get("quadDetection.cannyThreshold2", cannyThreshold2);
@@ -96,12 +95,22 @@ int main()
             minPeri = config.get("quadDetection.minPeri", minPeri);
             maxPeri = config.get("quadDetection.maxPeri", maxPeri);
             periScale = config.get("quadDetection.periScale", periScale);
+
+            std::cout << "Loaded config file." << std::endl;
         }
         catch (std::exception &ex)
         {
             std::cerr << ex.what() << std::endl;
         }
     }
+}
+
+int main()
+{
+    // create the image output folder
+    boost::filesystem::create_directories(imagePath);
+
+    LoadConfig();
 
     Mat cameraMatrix, distCoeffs, newCamMatix;
     Rect distortRoi;
@@ -272,6 +281,10 @@ int main()
         {
             debugDraw = !debugDraw;
         }
+        if (key == 'r')
+        {
+            LoadConfig();
+        }
         else if (key == 27)
         {
             break;
@@ -289,32 +302,20 @@ int main()
     return 0;
 }
 
-// TODO: needs tweaking, not really persistent
-cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
+void findOuterPoints(Size size, std::vector<Vec4i> &lines, Point2f &topLeft, Point2f &topRight, Point2f &bottomLeft, Point2f &bottomRight)
 {
-    cv::Mat edges, chessBoardRoi, lineDebug, undisorted, blur;
-    cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
-
-    GaussianBlur(grayImage, blur, Size(5, 5), 0);
-    Canny(blur, edges, chessCannyThreshold1, chessCannyThreshold2);
-
-    grayImage.copyTo(lineDebug);
-
-    std::vector<Vec4i> lines;
-    HoughLinesP(edges, lines, chessHoughLinesRho, chessHoughLinesTheta, chessHoughLinesThreshold, 10, 1);
-
-    cv::Size s = edges.size();
-    int leftX = s.width;
-    int rightX = 0;
-    int topY = 0;
-    int bottomY = s.height;
-
+    std::vector<Vec4i> filteredLines;
     // top and buttom in image coordinates, 0 is upper left corner
     // initial parameters ar flipped so it can find the max
-    Point2f topLeft = Point2f(leftX, bottomY);
-    Point2f topRight = Point2f(rightX, bottomY);
-    Point2f bottomLeft = Point2f(leftX, topY);
-    Point2f bottomRight = Point2f(rightX, topY);
+    int leftX = size.width;
+    int rightX = 0;
+    int topY = 0;
+    int bottomY = size.height;
+
+    topLeft = Point2f(leftX, bottomY);
+    topRight = Point2f(rightX, bottomY);
+    bottomLeft = Point2f(leftX, topY);
+    bottomRight = Point2f(rightX, topY);
 
     for (auto currentLine : lines)
     {
@@ -329,25 +330,17 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
         if (degress >= 85 && degress <= 93)
         {
             //vertical line
+            filteredLines.push_back(currentLine);
         }
         else if ((degress >= 0 && degress <= 3) || degress >= 357)
         {
             //horizontal line
+            filteredLines.push_back(currentLine);
         }
         else
         {
             continue;
         }
-
-
-        // only find horizontal or vertical lines
-
-
-        // draw the line for debugging into the debug window
-        line(lineDebug, pt1, pt2, cv::Scalar(255, 255, 255), 3);
-
-        //Point[][] quad = new Point[1][];
-        //quad[0] = approx;
 
         // find the outline, first check if its top or bottom
         if (pt1.y > topY)
@@ -427,14 +420,38 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
 
     }
 
-    topLeft.
-        y = topY;
-    topRight.
-        y = topY;
-    bottomLeft.
-        y = bottomY;
-    bottomRight.
-        y = bottomY;
+    topLeft.y = topY;
+    topRight.y = topY;
+    bottomLeft.y = bottomY;
+    bottomRight.y = bottomY;
+
+    lines = filteredLines;
+}
+
+// TODO: needs tweaking, not really persistent
+cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
+{
+    cv::Mat edges, chessBoardRoi, lineDebug, undistorted, blur;
+    cv::Mat linesMat = cv::Mat(grayImage.rows, grayImage.cols, CV_8UC1, cv::Scalar(0, 0, 0));
+
+    GaussianBlur(grayImage, blur, Size(5, 5), 0);
+    Canny(blur, edges, chessCannyThreshold1, chessCannyThreshold2);
+
+    grayImage.copyTo(lineDebug);
+
+    std::vector<Vec4i> lines;
+    HoughLinesP(edges, lines, chessHoughLinesRho, chessHoughLinesTheta, chessHoughLinesThreshold, 5, 4);
+
+    Point2f topLeft, topRight, bottomLeft, bottomRight;
+    findOuterPoints(edges.size(), lines, topLeft, topRight, bottomLeft, bottomRight);
+
+    for (auto currentLine : lines)
+    {
+        Point pt1 = Point(currentLine[0], currentLine[1]);
+        Point pt2 = Point(currentLine[2], currentLine[3]);
+        // draw the line for debugging into the debug window
+        line(lineDebug, pt1, pt2, cv::Scalar(255, 255, 255), 3);
+    }
 
     int size = 800;
     int height = abs(topLeft.y - bottomLeft.y);
@@ -453,13 +470,27 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
         Point2f dst[] = {newtopLeft, newtopRight, newbottomLeft, newbottomRight};
 
         Mat m = cv::getPerspectiveTransform(src, dst);
-        cv::warpPerspective(originalImage, undisorted, m, cv::Size(size, size)
-        );
+        cv::warpPerspective(originalImage, undistorted, m, cv::Size(size, size));
+
+        undistorted.copyTo(lastUndistortedBoard);
+        framesSinceLastBoard = 0;
     }
     else
     {
-        // we havent found the board (needs to be quadratic) so return the original image
-        undisorted = originalImage;
+        // we havent found the boardboard (needs to be quadratic) so return the original or cached image
+
+        if (framesSinceLastBoard < 25 && lastUndistortedBoard.data)
+        {
+            // use the cached board, brings better persistent images
+            lastUndistortedBoard.copyTo(undistorted);
+            framesSinceLastBoard++;
+        }
+        else
+        {
+            // to many frames since we found the board, show the input image
+            undistorted = originalImage;
+        }
+
     }
 
     if (debugDraw)
@@ -472,7 +503,7 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
     }
 
     return
-        undisorted;
+        undistorted;
 }
 
 std::vector<std::vector<cv::Point> > GetChessQuads(cv::Mat grayImage)
