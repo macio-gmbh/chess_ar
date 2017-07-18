@@ -1,8 +1,0 @@
-<map id="main" name="main">
-<area shape="rect" id="node2" href="$class_chess_board.html#abcb3be8f01217ad05e590b45da6fc827" title="ChessBoard::toString" alt="" coords="122,5,269,32"/>
-<area shape="rect" id="node3" href="$class_chess_engine_communicator.html#a2dc8fb4fe1afd90ee5ee643a56d61466" title="ChessEngineCommunicator\l::askStockfishForBestMove" alt="" coords="104,57,287,98"/>
-<area shape="rect" id="node5" href="$class_rabbit_m_q_sender.html#a95bf047dd7dcc6f5edd99170295d358a" title="RabbitMQSender::Send" alt="" coords="116,123,275,149"/>
-<area shape="rect" id="node6" href="$class_rabbit_m_q_receiver.html#abf33d4890bf8583e1bd856e88aa353ed" title="RabbitMQReceiver::Receive" alt="" coords="104,173,287,200"/>
-<area shape="rect" id="node4" href="$class_chess_engine_communicator.html#a43b669bccb8bce8ea862a58a9dc116bd" title="ChessEngineCommunicator\l::exec" alt="" coords="335,57,517,98"/>
-<area shape="rect" id="node7" href="$_rabbit_m_q_receiver_8cpp.html#a8eb9cd30b2addc2d83cd33089f31d928" title="stringify_bytes" alt="" coords="373,173,479,200"/>
-</map>

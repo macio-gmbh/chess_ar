@@ -1,7 +1,0 @@
-<map id="ConvertVectortoMatrix" name="ConvertVectortoMatrix">
-<area shape="rect" id="node2" href="$namespace_eye_utils.html#a7863a1f647ebb3fac9d691cec8492fb7" title="GetDescriptor" alt="" coords="204,31,307,57"/>
-<area shape="rect" id="node3" href="$eye_2main_8cpp.html#a6ad03b227deb1248af5a0d30ec6d3ae5" title="DetectFigures" alt="" coords="379,5,481,32"/>
-<area shape="rect" id="node5" href="$train_8cpp.html#a7ddf2036df48762ea79b3c96a8f0505f" title="LoadImageDescriptors" alt="" coords="355,56,505,83"/>
-<area shape="rect" id="node4" href="$eye_2main_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title="main" alt="" coords="553,5,604,32"/>
-<area shape="rect" id="node6" href="$train_8cpp.html#ae66f6b31b5ad750f1fe042a706a4e3d4" title="main" alt="" coords="553,56,604,83"/>
-</map>
