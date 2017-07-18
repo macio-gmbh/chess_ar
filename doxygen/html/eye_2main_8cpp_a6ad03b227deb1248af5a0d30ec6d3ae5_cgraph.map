@@ -1,0 +1,8 @@
+<map id="DetectFigures" name="DetectFigures">
+<area shape="rect" id="node2" href="$namespace_eye_utils.html#ad706b3c661ea3f55300c23d787512e04" title="EyeUtils::GetPreprocessed\lFigure" alt="" coords="161,5,341,47"/>
+<area shape="rect" id="node3" href="$namespace_eye_utils.html#a7863a1f647ebb3fac9d691cec8492fb7" title="EyeUtils::GetDescriptor" alt="" coords="171,71,330,98"/>
+<area shape="rect" id="node5" href="$namespace_eye_utils.html#a1dab392e8ef84b0e8c2c4ffb4329a123" title="EyeUtils::GetColorDescriptor" alt="" coords="156,122,345,149"/>
+<area shape="rect" id="node6" href="$namespace_eye_utils.html#afcc56b814a1e9d68bbe87ec7f35e0360" title="EyeUtils::MergeMatrixVector" alt="" coords="156,173,345,199"/>
+<area shape="rect" id="node7" href="$eye_2main_8cpp.html#a07f9ef1a708cb01e8921c68319450b2f" title="AreSvmsTrained" alt="" coords="193,223,309,250"/>
+<area shape="rect" id="node4" href="$namespace_eye_utils.html#af4e4b5738a8999796262e1043e4ec71e" title="EyeUtils::ConvertVectorto\lMatrix" alt="" coords="393,64,564,105"/>
+</map>

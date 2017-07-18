@@ -1,0 +1,5 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_rabbit_m_q_base.html" title="RabbitMQBase" alt="" coords="5,31,116,57"/>
+<area shape="rect" id="node2" href="$class_rabbit_m_q_receiver.html" title="RabbitMQReceiver" alt="" coords="164,5,293,32"/>
+<area shape="rect" id="node3" href="$class_rabbit_m_q_sender.html" title="RabbitMQSender" alt="" coords="168,56,289,83"/>
+</map>

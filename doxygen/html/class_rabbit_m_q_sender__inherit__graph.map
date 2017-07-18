@@ -1,0 +1,3 @@
+<map id="RabbitMQSender" name="RabbitMQSender">
+<area shape="rect" id="node2" href="$class_rabbit_m_q_base.html" title="{RabbitMQBase\n|# hostname\l# port\l# status\l# exchange\l# routingkey\l# messagebody\l# socket\l# conn\l|+ RabbitMQBase()\l+ ~RabbitMQBase()\l}" alt="" coords="7,5,145,200"/>
+</map>

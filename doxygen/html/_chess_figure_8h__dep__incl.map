@@ -1,0 +1,10 @@
+<map id="D:/Daten/HSKA/Master/2. Semester/Projektarbeit/Code/chess_ar/src/shared_lib/ChessFigure.h" name="D:/Daten/HSKA/Master/2. Semester/Projektarbeit/Code/chess_ar/src/shared_lib/ChessFigure.h">
+<area shape="rect" id="node2" href="$_chess_board_8h.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/shared\l_lib/ChessBoard.h" alt="" coords="350,124,529,195"/>
+<area shape="rect" id="node3" href="$_chess_engine_communicator_8h.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/controller\l/ChessEngineCommunicator.h" alt="" coords="76,361,275,432"/>
+<area shape="rect" id="node5" href="$controller_2main_8cpp.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/controller\l/main.cpp" alt="" coords="242,480,434,551"/>
+<area shape="rect" id="node6" href="$_zobrist_8h.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/shared\l_lib/Zobrist.h" alt="" coords="350,243,529,313"/>
+<area shape="rect" id="node8" href="$eye_2main_8cpp.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/eye/main.cpp" alt="" coords="553,250,771,306"/>
+<area shape="rect" id="node9" href="$_chess_board_8cpp.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/shared\l_lib/ChessBoard.cpp" alt="" coords="795,243,974,313"/>
+<area shape="rect" id="node4" href="$_chess_engine_communicator_8cpp.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/controller\l/ChessEngineCommunicator.cpp" alt="" coords="5,480,217,551"/>
+<area shape="rect" id="node7" href="$_zobrist_8cpp.html" title="D:/Daten/HSKA/Master\l/2. Semester/Projektarbeit\l/Code/chess_ar/src/shared\l_lib/Zobrist.cpp" alt="" coords="401,361,579,432"/>
+</map>

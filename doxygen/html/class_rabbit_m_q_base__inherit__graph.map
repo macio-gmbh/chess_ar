@@ -1,0 +1,4 @@
+<map id="RabbitMQBase" name="RabbitMQBase">
+<area shape="rect" id="node2" href="$class_rabbit_m_q_receiver.html" title="{RabbitMQReceiver\n|# queuename\l|+ RabbitMQReceiver()\l+ Receive()\l}" alt="" coords="5,248,155,340"/>
+<area shape="rect" id="node3" href="$class_rabbit_m_q_sender.html" title="{RabbitMQSender\n||+ RabbitMQSender()\l+ Send()\l}" alt="" coords="179,248,320,340"/>
+</map>
