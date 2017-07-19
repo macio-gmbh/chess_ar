@@ -328,17 +328,26 @@ void findOuterPoints(Size size, std::vector<Vec4i> &lines, Point2f &topLeft, Poi
         Point pt1 = Point(currentLine[0], currentLine[1]);
         Point pt2 = Point(currentLine[2], currentLine[3]);
 
+
+        // fite out lines at the edges of the image
+        // needs some tweaking
+        int filterWitdh = 200;
+        if (pt1.x < filterWitdh || pt1.x > (size.width - filterWitdh) || pt2.x < filterWitdh || pt2.x > (size.width - filterWitdh) )
+		{
+			continue;
+		}
+
         double angle = atan2((double) pt2.y - pt1.y,
                              (double) pt2.x - pt1.x);
 
         double degress = abs(angle * 180 / CV_PI);
 
-        if (degress >= 85 && degress <= 93)
-        {
+        if (degress >= 83 && degress <= 97)
+        { 
             //vertical line
             filteredLines.push_back(currentLine);
         }
-        else if ((degress >= 0 && degress <= 3) || degress >= 357)
+        else if ((degress >= 0 && degress <= 7) || degress >= 353)
         {
             //horizontal line
             filteredLines.push_back(currentLine);
@@ -347,7 +356,8 @@ void findOuterPoints(Size size, std::vector<Vec4i> &lines, Point2f &topLeft, Poi
         {
             continue;
         }
-
+        
+		
         // find the outline, first check if its top or bottom
         if (pt1.y > topY)
         {
@@ -465,7 +475,7 @@ cv::Mat FindChessboard(cv::Mat originalImage, cv::Mat grayImage)
 
     // check if its quadratic
     //if (false)
-    if (abs(height - width) < 25)
+    if (abs(height - width) < 40)
     {
         Point2f newbottomLeft = Point2f(0, 0);
         Point2f newbottomRight = Point2f(size, 0);
