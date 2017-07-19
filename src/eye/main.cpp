@@ -1,5 +1,6 @@
 #include <iostream>
 #include <functional>
+#include <ctime>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -46,6 +47,7 @@ double periScale = 0.05;
 bool writeNextFigures = false;
 cv::Mat lastUndistortedBoard;
 int framesSinceLastBoard = 0;
+time_t currentTimestamp;
 
 Ptr<cv::ml::SVM> bishopSvm;
 Ptr<cv::ml::SVM> knightSvm;
@@ -198,6 +200,8 @@ int main()
     // main loop
     while (true)
     {
+        std::time(&currentTimestamp);
+
         // get the image, from the camera or use the static image
         if (!staticImage)
         {
@@ -269,8 +273,10 @@ int main()
         char key = cv::waitKey(30);
         if (key == 'c')
         {
-            imwrite(imagePath.generic_string() + "originalImage.png", originalImage);
-            imwrite(imagePath.generic_string() + "chessBoardRoi.png", chessBoardRoi);
+            imwrite(imagePath.generic_string() + "originalImage" +
+                    boost::lexical_cast<std::string>(currentTimestamp) + ".png", originalImage);
+            imwrite(imagePath.generic_string() + "chessBoardRoi" +
+                    boost::lexical_cast<std::string>(currentTimestamp) + ".png", chessBoardRoi);
 
         }
         if (key == 'f')
@@ -655,8 +661,10 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
             if (writeNextFigures)
             {
                 // save the image
-                imwrite(imagePath.generic_string() + "image" + std::to_string(i) + ".png", imageRoi);
-                imwrite(imagePath.generic_string() + "image" + std::to_string(i) + "_masked.png", mask);
+                imwrite(imagePath.generic_string() + "image" + std::to_string(i) +
+                        boost::lexical_cast<std::string>(currentTimestamp) + ".png", imageRoi);
+
+                //imwrite(imagePath.generic_string() + "image" + std::to_string(i) + "_masked.png", mask);
             }
         }
         catch (std::exception &ex)
