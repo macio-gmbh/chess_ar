@@ -28,6 +28,12 @@ public:
      * kleiner HACK
      */
     std::string askStockfishForBestMove(const char* fen);
+
+	bool moveIsValid(const char* fen, const char* move);
+	
+	void clearInputFile(const char *outFilename);
+private:
+	const char* inputFile = "input.txt";
 };
 
 

@@ -637,6 +637,8 @@ void DetectFigures(Mat originalImage, Mat inputImage, std::vector<std::vector<Po
         {
             cv::Rect boundRect = boundingRect(Mat(chessContours.at(i)));
 
+
+			// thus dont make any sense
             if (!(boundRect.width > 0 && boundRect.width > 0))
                 continue;
 

@@ -32,7 +32,7 @@ RabbitMQBase::RabbitMQBase(const char *hostname, int port, const char *exchange)
 
     // create the exchange (won't create a 2nd one if its already there)
     amqp_exchange_declare(conn, 1, amqp_cstring_bytes(exchange), amqp_cstring_bytes("fanout"),
-                          0, 0, 0, 0, amqp_empty_table);
+                          0, 1, 0, 0, amqp_empty_table);
 
 }
 

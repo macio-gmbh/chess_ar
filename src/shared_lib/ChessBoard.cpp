@@ -236,25 +236,6 @@ ChessBoard::ChessBoard(std::string &fen){
 
 }
 
-ChessBoard ChessBoard::Chessboard(std::array<ChessFigure, 64> &newBoard, ChessColor curMove,
-                                  bool newblackKingSideCastelling, bool newblackQueenSideCastelling,
-                                  bool newwhiteKingSideCastelling, bool newwhiteQueenSideCastelling, int_fast8_t newenpassent,
-                                  uint16_t newhalfMove, uint16_t newfullMove) {
-    board = newBoard;
-    currentMove = curMove;
-    blackKingSideCastelling = newblackKingSideCastelling;
-    blackQueenSideCastelling= newblackQueenSideCastelling;
-    whiteKingSideCastelling = newwhiteKingSideCastelling;
-    whiteQueenSideCastelling = newwhiteQueenSideCastelling;
-    enpassent = newenpassent;
-    halfMove = newhalfMove ;
-    fullMove = newfullMove;
-
-}
-
-
-
-
 std::string ChessBoard::toString() {
 
     int8_t emptyCtr = 0;
@@ -430,6 +411,10 @@ void ChessBoard::emtyTileSetter(int8_t emptyTileCtr, uint8_t &runner) {
         runner++;
     }
 
+}
+
+std::array<ChessFigure, 64> ChessBoard::GetBoard() {
+	return this->board;
 }
 
 

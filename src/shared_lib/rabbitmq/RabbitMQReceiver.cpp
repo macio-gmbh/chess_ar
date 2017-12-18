@@ -8,7 +8,7 @@ RabbitMQReceiver::RabbitMQReceiver(const char *hostname, int port, const char *e
                                                                                                         exchange)
 {
     // create a neq queue
-    amqp_queue_declare_ok_t *r = amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 0, 0, 1,
+    amqp_queue_declare_ok_t *r = amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 1, 0, 1,
                                                     amqp_empty_table);
 
     if (r == NULL)

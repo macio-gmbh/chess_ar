@@ -189,16 +189,16 @@ int main()
     vector<Mat> kingDescritpors, pawnDescritpors, emptyDescritpors, queenDescritpors, rookDescritpors,
         bishopDescritpors, knightDescritpors, blackDescriptors, whiteDescriptors;
 
-    LoadImageDescriptors("../train/chessBoard/empty/", emptyDescritpors);
-    LoadImageDescriptors("../train/chessBoard/king/", kingDescritpors);
-    LoadImageDescriptors("../train/chessBoard/queen/", queenDescritpors);
-    LoadImageDescriptors("../train/chessBoard/rook/", rookDescritpors);
-    LoadImageDescriptors("../train/chessBoard/bishop/", bishopDescritpors);
-    LoadImageDescriptors("../train/chessBoard/knight/", knightDescritpors);
-    LoadImageDescriptors("../train/chessBoard/pawn/", pawnDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/empty/", emptyDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/king/", kingDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/queen/", queenDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/rook/", rookDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/bishop/", bishopDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/knight/", knightDescritpors);
+    LoadImageDescriptors("../../train/chessBoard/pawn/", pawnDescritpors);
 
-    LoadImageColors("../train/chessBoard/black/", blackDescriptors);
-    LoadImageColors("../train/chessBoard/white/", whiteDescriptors);
+    LoadImageColors("../../train/chessBoard/black/", blackDescriptors);
+    LoadImageColors("../../train/chessBoard/white/", whiteDescriptors);
 
     bool split = false;
 

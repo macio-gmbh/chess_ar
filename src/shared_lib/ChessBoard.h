@@ -34,12 +34,6 @@ public:
     uint16_t  halfMove = 0;
 
     uint16_t  fullMove = 0;
-    /**
-     *
-     * Default constructor
-     * @return
-     */
-    ChessBoard Chessboard();
     
     /**
      * Receives a FEN-String of a board and converts it to a  chess board.
@@ -49,23 +43,9 @@ public:
 
     ChessBoard(std::string&  fen);
 
-    /**
-    * Receives an array of Chess figures
-     * @param board Is a string in fen Notation
-    */
-    ChessBoard Chessboard(
-            std::array<ChessFigure,64>  &newBoard,
-            ChessColor curMove,
-            bool newblackKingSideCastelling ,
-            bool newblackQueenSideCastelling ,
-            bool newwhiteKingSideCastelling ,
-            bool newwhiteQueenSideCastelling ,
-            int_fast8_t  newenpassent,
-            uint16_t  newhalfMove,
-            uint16_t  newfullMove);
-
-
     std::string toString();
+
+	std::array<ChessFigure, 64> GetBoard();
 
 private:
 
