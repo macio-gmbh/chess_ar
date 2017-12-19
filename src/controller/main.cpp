@@ -227,18 +227,18 @@ std::vector<ChessField> CalculateDifference(ChessBoard lastBoard, ChessBoard cur
 
 Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, ChessEngineCommunicator engineCommunicator, const char* fen) {
 	std::string move;
-	if (difference.size == 1) {
+	if (difference.size() == 1) {
 		return MISSING_FIGURE;
 	}
-	else if (difference.size > 4 || difference.size == 3) {
+	else if (difference.size() > 4 || difference.size() == 3) {
 		return INVALID_BOARD;
 	}
-	else if (difference.size == 4) {
+	else if (difference.size() == 4) {
 		int king = 0;
 		int rook = 0;
 		ChessField currentKingField;
 		int lastKingField;
-		for (int i = 0; i < difference.size; i++) {
+		for (int i = 0; i < difference.size(); i++) {
 			if (difference.at(i).figure.figure_type == ROOK) {
 				rook++;
 			}
@@ -250,7 +250,7 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 		if (king != 1 && rook != 1) {
 			return INVALID_BOARD;
 		}
-		for (int i = 0; i < lastBoard.GetBoard().size; i++) {
+		for (int i = 0; i < lastBoard.GetBoard().size(); i++) {
 			if (lastBoard.GetBoard().at(i).figure_type == KING) {
 				if (lastBoard.GetBoard().at(i).color == currentColor) {
 					lastKingField = i;
@@ -284,7 +284,7 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 			return NO_ERROR;
 		}
 	}
-	else if (difference.size == 2) {
+	else if (difference.size() == 2) {
 		ChessFigure currentFigure;
 		int currentField;
 		ChessFigure lastFigure;
