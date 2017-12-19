@@ -27,7 +27,7 @@ bool blackQueenSideCastelling;
 bool whiteKingSideCastelling;
 bool whiteQueenSideCastelling;
 
-std::string enPassant;
+std::string enPassent;
 
 ChessColor  currentColor;
 
@@ -37,9 +37,11 @@ int64_t fullMove;
 
 std::vector<ChessField> CalculateDifference(ChessBoard lastBoard, ChessBoard currentBoard);
 
-Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, ChessEngineCommunicator engineCommunicator);
+Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, ChessEngineCommunicator engineCommunicator, const char* fen);
 
 std::string ColumnToString(int column);
+
+std::string FigureTypeToString(FigureType aType);
 
 /*
 Error ValidateMove(std::vector<ChessField> differentFields, ChessColor currentPlayer, bool kingInChess, ChessBoard lastBoard) {
@@ -129,15 +131,15 @@ int main() {
 
 
     std::cout << "Hello, World from controller! Initialising ..." << std::endl;
-    std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    //std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    ChessBoard currentBoard= ChessBoard(initialBoard);
-    ChessBoard lastBoard= ChessBoard(initialBoard);
+    //ChessBoard currentBoard= ChessBoard(initialBoard);
+    //ChessBoard lastBoard= ChessBoard(initialBoard);
 
-    std::cout<< "Initial Setup Test: " << currentBoard.toString() <<std::endl;
+    //std::cout<< "Initial Setup Test: " << currentBoard.toString() <<std::endl;
     bool inital = true;
 
-    Zobrist currentZobrist;
+    //Zobrist currentZobrist;
 
     ChessEngineCommunicator engineCommunicator = ChessEngineCommunicator();
 
@@ -158,14 +160,105 @@ int main() {
     //allways increases after Black moves
     fullMove = 1;
 
+	enPassent = "-";
 
 
-    std::string sendStr = currentBoard.toString()+ " " +engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
-    guiSender.Send(sendStr.c_str());
+	std::string sendStr;
+	std::string initialBoard = eyeReceiver.Receive();
+	ChessBoard currentBoard = ChessBoard(initialBoard);
+	sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+	std::cout << sendStr.c_str() << "\n";;
+	guiSender.Send(sendStr.c_str());
+	ChessBoard lastBoard = currentBoard;
+	Zobrist currentZobrist(initialBoard);
+
     while (true) {
-      std::string nextBoard = eyeReceiver.Receive();
+  	  std::string nextBoard = eyeReceiver.Receive();
       Zobrist newZobrist(nextBoard);
 
+	  if (currentZobrist.zobristHash != newZobrist.zobristHash) {
+		  std::cout << "next board: " << nextBoard << "\n";
+		  currentBoard = ChessBoard(nextBoard);
+
+		  std::vector<ChessField> difference = CalculateDifference(lastBoard, currentBoard);
+
+		  Error error = ValidateMove(difference, lastBoard, engineCommunicator, lastBoard.toString().c_str());
+
+		  if (error == NO_ERROR) {
+			  std::cout << "all correct" << "\n";;
+			  currentZobrist = newZobrist;
+			  if (currentColor == ChessColor::WHITE) {
+				  currentColor = ChessColor::BLACK;
+			  }
+			  else {
+				  currentColor = ChessColor::WHITE;
+				  fullMove += 1;
+			  }
+			  currentBoard.setFullMove(fullMove);
+			  currentBoard.setCurrentMove(currentColor);
+			  std::cout << enPassent << "\n";
+			  currentBoard.setEnPassent(enPassent);
+			  currentBoard.setCastling(blackKingSideCastelling, blackQueenSideCastelling, whiteKingSideCastelling, whiteQueenSideCastelling);
+			  currentBoard.setHalfMove(halfMove);
+
+			  sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+			  std::cout << sendStr << "\n";
+			  guiSender.Send(sendStr.c_str());
+			  lastBoard = currentBoard;
+		  }
+		  else if (error == MISSING_FIGURE) {
+			  ChessFigure missingFigure = difference.at(0).figure;
+			  int line = 8 - (difference.at(0).field / 8);
+			  std::string field = ColumnToString(difference.at(0).field % 8) + std::to_string(line);
+			  sendStr = "ERROR1 " + FigureTypeToString(missingFigure.figure_type) + field;
+			  std::cout << sendStr << "\n";
+			  guiSender.Send(sendStr.c_str());
+		  }
+		  else if (error == INVALID_BOARD) {
+			  sendStr = "ERROR2";
+			  std::cout << sendStr << "\n";
+			  guiSender.Send(sendStr.c_str());
+
+		  }
+		  else if (error == WRONG_MOVE) {
+			  ChessFigure currentFigure;
+			  int currentField;
+			  ChessFigure lastFigure;
+			  int lastField;
+
+			  if (difference.at(0).figure.figure_type != EMPTY) {
+				  currentFigure = difference.at(0).figure;
+				  currentField = difference.at(0).field;
+				  lastFigure = difference.at(1).figure;
+				  lastField = difference.at(1).field;
+			  }
+			  else {
+				  currentFigure = difference.at(1).figure;
+				  currentField = difference.at(1).field;
+				  lastFigure = difference.at(0).figure;
+				  lastField = difference.at(0).field;
+			  }
+
+			  int lastLine = 8 - (lastField / 8);
+			  int currentLine = 8 - (currentField / 8);
+			  std::string move = ColumnToString(lastField % 8) + std::to_string(lastLine) +
+				     ColumnToString(currentField % 8) + std::to_string(currentLine);
+
+			  sendStr = "ERROR3 " + FigureTypeToString(currentFigure.figure_type) + move;
+			  std::cout << sendStr << "\n";
+			  guiSender.Send(sendStr.c_str());
+		  }
+		  else if (error == EYE_ERROR) {
+			  sendStr = "ERROR4";
+			  std::cout << sendStr << "\n";
+			  guiSender.Send(sendStr.c_str());
+		  }
+		  
+	  }
+	  else {
+		  std::cout << "no difference";
+	  }
+	  /*
       if(currentZobrist.zobristHash != newZobrist.zobristHash || inital) {
 
           if(!inital ) {
@@ -183,7 +276,7 @@ int main() {
               currentBoard.currentMove = currentColor;
           } else {
               inital = false;
-          }
+          }*/
           /*
              * TODO:
              * 1. Check if the next board is a valid
@@ -196,11 +289,11 @@ int main() {
              * 6. Set the current half move number in the board
              */
            //Send and receive best move Request
-           sendStr = currentBoard.toString()+ " " +engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+		   /*sendStr = currentBoard.toString()+ " " +engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
            guiSender.Send(sendStr.c_str());
-        }
+        }*/
    }
-    return 0;
+   return 0;
 }
 
 
@@ -258,8 +351,8 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 			}
 		}
 		//validity check
-		int lastKingFieldLine = lastKingField / 8;
-		int currentKingFieldLine = currentKingField.field / 8;
+		int lastKingFieldLine = 8 - (lastKingField / 8);
+		int currentKingFieldLine = 8 - (currentKingField.field / 8);
 		move = ColumnToString(lastKingField % 8) + std::to_string(lastKingFieldLine) +
 			   ColumnToString(currentKingField.field % 8) + std::to_string(currentKingFieldLine);
 		
@@ -268,19 +361,24 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 			if (currentColor == WHITE) {
 				if (currentKingField.field % 8 == 2) {
 					whiteQueenSideCastelling = false;
+					std::cout << "whiteQueenSideCastelling\n";
 				}
 				else {
 					whiteKingSideCastelling = false;
+					std::cout << "whiteKingSideCastelling\n";
 				}
 			}
 			else {
 				if (currentKingField.field % 8 == 2) {
 					blackQueenSideCastelling = false;
+					std::cout << "blackQueenSideCastelling\n";
 				}
 				else {
 					blackKingSideCastelling = false;
+					std::cout << "blackKingSideCastelling\n";
 				}
 			}
+			halfMove++;
 			return NO_ERROR;
 		}
 	}
@@ -291,7 +389,7 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 		int lastField;
 
 		if (difference.at(0).figure.figure_type != EMPTY && difference.at(1).figure.figure_type != EMPTY) {
-			return WRONG_MOVE;
+			return INVALID_BOARD;
 		}
 		//which one has moved
 		if (difference.at(0).figure.figure_type != EMPTY) {
@@ -311,32 +409,38 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 			return EYE_ERROR;
 		}
 		//validity check
-		int lastLine = lastField / 8;
-		int currentLine = currentField / 8;
+		int lastLine = 8 - (lastField / 8);
+		int currentLine = 8 - (currentField / 8);
 		move = ColumnToString(lastField % 8) + std::to_string(lastLine) +
 			   ColumnToString(currentField % 8) + std::to_string(currentLine);
 
 		if (engineCommunicator.moveIsValid(fen, move.c_str())) {
-			//enPassant
+			halfMove++;
+			//enPassent
 			if (currentFigure.figure_type == PAWN) {
 				//reset halfMove
 				halfMove = 0;
 				int diffLine = currentLine - lastLine;
 				if (diffLine == 2 || diffLine == -2) {
-					int fieldBehind = diffLine > 0 ? -1 : 1;
-					enPassant = ColumnToString(currentField % 8) + std::to_string(currentLine - fieldBehind);
+					int fieldBehind = diffLine > 0 ? 1 : -1;
+					enPassent = ColumnToString(currentField % 8) + std::to_string(currentLine - fieldBehind);
+					std::cout << "enpassent\n";
 				}
 				else {
-					enPassant = "-";
+					enPassent = "-";
+					std::cout << "enpassent lost\n";
 				}
 			}
 			else {
-				enPassant = "-";
+				enPassent = "-";
+				std::cout << "enpassent lost\n";
 			}
 			//strike, reset halfMove
 			if (currentColor != lastBoard.GetBoard().at(currentField).color &&
 				lastBoard.GetBoard().at(currentField).color != NONE) {
 				halfMove = 0;
+
+				std::cout << "strike";
 			}
 			return NO_ERROR;
 		}
@@ -356,5 +460,17 @@ std::string ColumnToString(int column) {
 	case 6: return "g";
 	case 7: return "h";
 	default: return "X";
+	}
+}
+
+std::string FigureTypeToString(FigureType aType) {
+	switch (aType) {
+	case KING: return "K ";
+	case QUEEN: return "Q ";
+	case ROOK: return "R ";
+	case KNIGHT: return "N ";
+	case BISHOP: return "B ";
+	case PAWN: return "P ";
+	default: return " ";
 	}
 }

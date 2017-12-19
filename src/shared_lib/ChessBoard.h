@@ -47,6 +47,16 @@ public:
 
 	std::array<ChessFigure, 64> GetBoard();
 
+	void setEnPassent(std::string enPassent);
+
+	void setCastling(bool blackKingSide, bool blackQueenSide, bool whiteKingSide, bool whiteQueenSide);
+
+	void setHalfMove(uint16_t halfMove);
+
+	void setFullMove(uint16_t fullMove);
+
+	void setCurrentMove(ChessColor currentMove);
+
 private:
 
 

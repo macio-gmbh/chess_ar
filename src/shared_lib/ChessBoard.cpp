@@ -417,5 +417,70 @@ std::array<ChessFigure, 64> ChessBoard::GetBoard() {
 	return this->board;
 }
 
+void ChessBoard::setEnPassent(std::string enPassent) {
+	if (enPassent == "-") {
+		this->enpassent = -1;
+	}
+	else {
+		char first = enPassent.at(0);
+		char second = enPassent.at(1);
+		switch (first) {
+		case 'a':
+			this->enpassent = 0;
+			break;
+		case 'b':
+			this->enpassent = 1;
+			break;
+		case 'c':
+			this->enpassent = 2;
+			break;
+		case 'd':
+			this->enpassent = 3;
+			break;
+		case 'e':
+			this->enpassent = 4;
+			break;
+		case 'f':
+			this->enpassent = 5;
+			break;
+		case 'g':
+			this->enpassent = 6;
+			break;
+		case 'h':
+			this->enpassent = 7;
+			break;
+		default:
+			currentMove = ChessColor::NONE;
+		}
 
+		switch (second) {
+		case '3':
+			this->enpassent += 16;
+			break;
+		case '6':
+			this->enpassent += 40;
+			break;
+		default:
+			currentMove = ChessColor::NONE;
+		}
+	}
+}
 
+void ChessBoard::setCastling(bool blackKingSide, bool blackQueenSide, bool whiteKingSide, bool whiteQueenSide) {
+	this->blackKingSideCastelling = blackKingSide;
+	this->blackQueenSideCastelling = blackQueenSide;
+	this->whiteKingSideCastelling = whiteKingSide;
+	this->whiteQueenSideCastelling = whiteQueenSide;
+}
+
+void ChessBoard::setHalfMove(uint16_t halfMove) {
+	this->halfMove = halfMove;
+}
+
+void ChessBoard::setFullMove(uint16_t fullMove) {
+	this->fullMove = fullMove;
+}
+
+void ChessBoard::setCurrentMove(ChessColor currentMove) {
+	this->currentMove = currentMove;
+}

@@ -48,10 +48,10 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 	std::size_t pos = res.find("bestmove");
 
 	if (pos != std::string::npos) {
-		res = res.substr(pos);
+		res = res.substr(pos).substr(9, 4);
 	}
 	else {
-		res = "bestmove (none)";
+		res = "(none)";
 	}
 	return res;
 	/*
@@ -78,6 +78,7 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 }
 
 bool ChessEngineCommunicator::moveIsValid(const char* fen, const char* move) {
+	std::cout << move << "\n";
 	std::ofstream input(this->inputFile);
 	clearInputFile(this->inputFile);
 	input << "setoption name Hash value 128\n";
@@ -94,6 +95,7 @@ bool ChessEngineCommunicator::moveIsValid(const char* fen, const char* move) {
 	std::size_t pos = res.find("bestmove");
 	if (pos != std::string::npos) {
 		res = res.substr(pos).substr(9, 4);
+		std::cout << res << "\n";
 		if (res == move) {
 			return true;
 		}
