@@ -53,7 +53,6 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 	else {
 		res = "bestmove (none)";
 	}
-	std::cout << res;
 	return res;
 	/*
 	std::string cmd = "stockfish < EOF\n";
@@ -94,7 +93,10 @@ bool ChessEngineCommunicator::moveIsValid(const char* fen, const char* move) {
 	std::string res = exec("stockfish < input.txt");
 	std::size_t pos = res.find("bestmove");
 	if (pos != std::string::npos) {
-		return true;
+		res = res.substr(pos).substr(9, 4);
+		if (res == move) {
+			return true;
+		}
 	}
 	return false;
 }
