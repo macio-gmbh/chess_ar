@@ -32,9 +32,23 @@ public class GuiManager : MonoBehaviour {
     public Button[] pawns;
     public Button[] figures;
 
+    public Color whiteColor;
+    public Color blackColor;
     public Color enabledColor;
     public Color disabledColor;
     public Color focusedColor;
+
+    public Receiver amqpReceiver;
+    public Text errorLabel;
+    public Text errorText;
+    public Image errorImage;
+
+
+    public GameObject DarkOverlay;
+    public GameObject CheckmatedPanel;
+    public GameObject WaitingPanel;
+    public Image CheckmatedImage;
+    public Text WinnerText;
 
     void Start() {
         currentPlayer = Figure.Player.NONE;
@@ -64,26 +78,35 @@ public class GuiManager : MonoBehaviour {
     {
         isDisplayed = !isDisplayed;
         aAnimator.SetBool("IsDisplayed", isDisplayed);
+        if (!isDisplayed)
+        {
+            amqpReceiver.update();
+        }
     }
 
-    private void setCurrentPlayer(string aPlayer)
+    public void setCurrentPlayer(string aPlayer)
     {
         if (aPlayer == "w")
         {
             currentPlayer = Figure.Player.WHITE;
             CurrentPlayerText.text = "White";
-            currentPlayerIcon.color = Color.white;
+            currentPlayerIcon.color = whiteColor;
+            CheckmatedImage.color = blackColor;
+            WinnerText.text = "Black wins";
         }
         else if (aPlayer == "b")
         {
             currentPlayer = Figure.Player.BLACK;
             CurrentPlayerText.text = "Black";
-            currentPlayerIcon.color = Color.black;
+            currentPlayerIcon.color = blackColor;
+            CheckmatedImage.color = whiteColor;
+            WinnerText.text = "White wins";
         }
         else
         {
             currentPlayer = Figure.Player.NONE;
             CurrentPlayerText.text = "No Player";
+            WinnerText.text = "No one has won";
         }
     }
 
@@ -98,6 +121,11 @@ public class GuiManager : MonoBehaviour {
         {
             BestMoveText.text = aBestMove.Substring(0, 2).ToUpper() + " - " + aBestMove.Substring(2, 2).ToUpper();
             int figureType = (int) board.getFigure(8 - getLine(aBestMove.Substring(1, 1)), getColumn(aBestMove.Substring(0, 1)) - 1).getType();
+            Debug.Log(aBestMove);
+            Debug.Log("Figure col: " + (getColumn(aBestMove.Substring(0, 1))));
+            Debug.Log("Figure line: " + (getLine(aBestMove.Substring(1, 1))));
+            Debug.Log("asdf "+ board.getFigure(8 - getLine(aBestMove.Substring(1, 1)), getColumn(aBestMove.Substring(0, 1)) - 1).getType());
+            Debug.Log("bestMove FigureType: " + figureType);
             bestMoveImage.sprite = iconImages[figureType];
         }
     }
@@ -218,22 +246,6 @@ public class GuiManager : MonoBehaviour {
         }
     }
 
-    public void onButtonClicked(Button aButton)
-    {
-        for (int button = 0; button < figures.Length; button++)
-        {
-            if (figures[button].enabled)
-            {
-                figures[button].GetComponent<Image>().color = enabledColor;
-            }
-            if (pawns[button].enabled)
-            {
-                pawns[button].GetComponent<Image>().color = enabledColor;
-            }
-        }
-        aButton.GetComponent<Image>().color = focusedColor;
-    }
-
     private int getColumn(string move)
     {
         switch (move)
@@ -264,5 +276,103 @@ public class GuiManager : MonoBehaviour {
         int line = 0;
         Int32.TryParse(aLine, out line);
         return line;
+    }
+
+    private Figure.FigureType getFigureType(string figure)
+    {
+        switch (figure)
+        {
+            case "K":
+                return Figure.FigureType.KING;
+            case "Q":
+                return Figure.FigureType.QUEEN;
+            case "R":
+                return Figure.FigureType.ROOK;
+            case "N":
+                return Figure.FigureType.KNIGHT;
+            case "B":
+                return Figure.FigureType.BISHOP;
+            case "P":
+                return Figure.FigureType.PAWN;
+            default:
+                return Figure.FigureType.EMPTY;
+
+        }
+    }
+
+    public void setError(string errorString)
+    {
+        string[] errorArray = errorString.Split(' ');
+        if (errorArray[0] != "CHECK")
+        {
+            if (errorArray[0] == "ERROR1")
+            {
+                string figure = errorArray[1];
+                string field = errorArray[2];
+                errorLabel.text = "Missing Figure:";
+                errorText.text = field;
+                errorImage.enabled = true;
+                errorImage.sprite = iconImages[(int)getFigureType(figure)];
+            }
+            else if (errorArray[0] == "ERROR2")
+            {
+                errorLabel.text = "Invalid Board:";
+                errorText.text = "Recalibrate the eye or reset all figures";
+                errorImage.enabled = false;
+            }
+            else if (errorArray[0] == "ERROR3")
+            {
+                string figure = errorArray[1];
+                string move = errorArray[2].ToUpper();
+                errorLabel.text = "Invalid Move:";
+                errorText.text = move;
+                errorImage.enabled = true;
+                errorImage.sprite = iconImages[(int) getFigureType(figure)];
+            }
+            else if (errorArray[0] == "ERROR4")
+            {
+                errorLabel.text = "Wrong Figure detected:";
+                errorText.text = "Make sure there is one figure each field";
+                errorImage.enabled = false;
+            }
+        }
+        else
+        {
+            string player = (currentPlayer == Figure.Player.WHITE) ? ("White") : ((currentPlayer == Figure.Player.BLACK) ? "Black" : "None");
+            errorLabel.text = "Check:";
+            errorText.text = player + " king is checked";
+            errorImage.enabled = true;
+            errorImage.sprite = iconImages[(int)getFigureType("K")];
+        }
+    }
+
+    public void enableDarkOverlay()
+    {
+        DarkOverlay.SetActive(true);
+    }
+    
+    public void disableDarkOverlay()
+    {
+        DarkOverlay.SetActive(false);
+    }
+    
+    public void enableCheckmatedPanel()
+    {
+        CheckmatedPanel.SetActive(true);
+    }
+
+    public void disableCheckmatedPanel()
+    {
+        CheckmatedPanel.SetActive(false);
+    }
+
+    public void enableWaitingPanel()
+    {
+        WaitingPanel.SetActive(true);
+    }
+
+    public void disableWaitingPanel()
+    {
+        WaitingPanel.SetActive(false);
     }
 }

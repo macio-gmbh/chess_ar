@@ -30,6 +30,8 @@ public:
     std::string askStockfishForBestMove(const char* fen);
 
 	bool moveIsValid(const char* fen, const char* move);
+
+	bool isCheck(const char* fen);
 	
 	void clearInputFile(const char *outFilename);
 private:

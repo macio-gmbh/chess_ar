@@ -19,7 +19,8 @@ enum Error {
 	MISSING_FIGURE = 1,
 	INVALID_BOARD = 2,
 	WRONG_MOVE = 3,
-	EYE_ERROR = 4
+	EYE_ERROR = 4,
+	CHECK = 5
 };
 
 bool blackKingSideCastelling;
@@ -42,6 +43,8 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 std::string ColumnToString(int column);
 
 std::string FigureTypeToString(FigureType aType);
+
+void setCastling(ChessBoard aBoard);
 
 /*
 Error ValidateMove(std::vector<ChessField> differentFields, ChessColor currentPlayer, bool kingInChess, ChessBoard lastBoard) {
@@ -142,9 +145,10 @@ int main() {
     //Zobrist currentZobrist;
 
     ChessEngineCommunicator engineCommunicator = ChessEngineCommunicator();
-
+	
     RabbitMQSender guiSender("localhost", 5672, "ControllerToGui");
     RabbitMQReceiver eyeReceiver("localhost",5672, "EyeToController");
+	RabbitMQReceiver guiReceiver("localhost", 5672, "GuiToController");
 
     blackKingSideCastelling = true;
     blackQueenSideCastelling = true;
@@ -166,6 +170,9 @@ int main() {
 	std::string sendStr;
 	std::string initialBoard = eyeReceiver.Receive();
 	ChessBoard currentBoard = ChessBoard(initialBoard);
+	
+	setCastling(currentBoard);
+
 	sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
 	std::cout << sendStr.c_str() << "\n";;
 	guiSender.Send(sendStr.c_str());
@@ -201,9 +208,54 @@ int main() {
 			  currentBoard.setCastling(blackKingSideCastelling, blackQueenSideCastelling, whiteKingSideCastelling, whiteQueenSideCastelling);
 			  currentBoard.setHalfMove(halfMove);
 
-			  sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
-			  std::cout << sendStr << "\n";
-			  guiSender.Send(sendStr.c_str());
+			  std::string bestMove = engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+			  if (bestMove == "(none)") {
+				  std::string player = currentColor == WHITE ? "w" : "b";
+				  sendStr = "CHECKMATED " + player;
+				  guiSender.Send(sendStr.c_str());
+
+				  std::string guiMessage = guiReceiver.Receive();
+
+				  if (guiMessage == "startnewgame") {
+					  blackKingSideCastelling = true;
+					  blackQueenSideCastelling = true;
+					  whiteKingSideCastelling = true;
+					  whiteQueenSideCastelling = true;
+					  enPassent = "-";
+					  halfMove = 0;
+					  fullMove = 1;
+					  currentColor = WHITE;
+
+					  initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+					  currentZobrist = Zobrist(initialBoard);
+					  std::string receivedBoard;
+
+					  //wait until initialBoard is set
+					  do {
+						  receivedBoard = eyeReceiver.Receive();
+						  newZobrist = Zobrist(receivedBoard);
+					  } while (currentZobrist.zobristHash != newZobrist.zobristHash);
+
+					  currentBoard = ChessBoard(initialBoard);
+					  lastBoard = currentBoard;
+
+					  sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+					  std::cout << sendStr << "\n";
+					  guiSender.Send(sendStr.c_str());
+				  }
+				  else if (guiMessage == "quit") {
+					  return 0;
+				  }
+			  }
+			  else if (halfMove == 50) {
+				  guiSender.Send("REMIS");
+			  }
+			  else {
+				  sendStr = currentBoard.toString() + " " + bestMove;
+				  std::cout << sendStr << "\n";
+				  guiSender.Send(sendStr.c_str());
+			  }
+
 			  lastBoard = currentBoard;
 		  }
 		  else if (error == MISSING_FIGURE) {
@@ -250,6 +302,12 @@ int main() {
 		  }
 		  else if (error == EYE_ERROR) {
 			  sendStr = "ERROR4";
+			  std::cout << sendStr << "\n";
+			  guiSender.Send(sendStr.c_str());
+		  }
+		  else if (error == CHECK) {
+			  std::string player = currentColor == WHITE ? "w" : "b";
+			  sendStr = "CHECK " + player;
 			  std::cout << sendStr << "\n";
 			  guiSender.Send(sendStr.c_str());
 		  }
@@ -381,6 +439,10 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 			halfMove++;
 			return NO_ERROR;
 		}
+		else if (engineCommunicator.isCheck(fen)) {
+			std::cout << "check" << "\n";
+			return CHECK;
+		}
 	}
 	else if (difference.size() == 2) {
 		ChessFigure currentFigure;
@@ -473,4 +535,41 @@ std::string FigureTypeToString(FigureType aType) {
 	case PAWN: return "P ";
 	default: return " ";
 	}
+}
+
+void setCastling(ChessBoard aBoard) {
+	std::array<ChessFigure, 64> board = aBoard.GetBoard();
+	
+	bool blackKingSide = true;
+	bool blackQueenSide = true;
+	bool whiteKingSide = true;
+	bool whiteQueenSide = true;
+
+	if (board.at(4).figure_type != KING) {
+		blackKingSide = false;
+		blackQueenSide = false;
+	}
+	else if (board.at(0).figure_type != ROOK) {
+		blackQueenSide = false;
+	}
+	else if (board.at(7).figure_type != ROOK) {
+		blackKingSide = false;
+	}
+
+	if (board.at(60).figure_type != KING) {
+		whiteKingSide = false;
+		whiteQueenSide = false;
+	}
+	else if (board.at(56).figure_type != ROOK) {
+		whiteQueenSide = false;
+	}
+	else if (board.at(63).figure_type != ROOK) {
+		whiteKingSide = false;
+	}
+
+	aBoard.setCastling(blackKingSide, blackQueenSide, whiteKingSide, whiteQueenSide);
+	blackKingSideCastelling = blackKingSide;
+	blackQueenSideCastelling = blackQueenSide;
+	whiteKingSideCastelling = whiteKingSide;
+	whiteQueenSideCastelling = whiteQueenSide;
 }

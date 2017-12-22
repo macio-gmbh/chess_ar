@@ -5,12 +5,6 @@ using UnityEngine;
 
 public class Receiver : MonoBehaviour
 {
-
-    private bool fenReceived = false;
-
-    [Tooltip("An optional ID filter that looks for an 'id' property in the received message. If the ID does not match this value, the message will be ignored.")]
-    public string IdFilter;
-
     [Tooltip("The name of the exchange to subscribe to.")]
     public string ExchangeName;
 
@@ -26,7 +20,16 @@ public class Receiver : MonoBehaviour
     [Tooltip("Animator to toggle screen info.")]
     public Animator GuiAnimator;
 
+    public Animator ErrorAnimator;
+
+    public GuiManager UiManager;
+
     private string fenString = "";
+
+    private bool fenReceived = false;
+
+    private AmqpExchangeReceivedMessage lastReceivedMessage;
+
 
     // Use this for initialization
     void Start()
@@ -42,13 +45,7 @@ public class Receiver : MonoBehaviour
          */
         AmqpClient.Subscribe(subscription);
     }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
+    
     /**
      * Handles messages receieved from this object's subscription based on the exchange name,
      * exchange type, and routing key used. You could also write an anonymous delegate in line
@@ -56,44 +53,73 @@ public class Receiver : MonoBehaviour
      */
     void HandleExchangeMessageReceived(AmqpExchangeReceivedMessage received)
     {
-        if (System.Text.Encoding.UTF8.GetString(received.Message.Body) != fenString)
+        string receivedString = System.Text.Encoding.UTF8.GetString(received.Message.Body);
+
+        if (receivedString != fenString)
         {
             if (fenReceived && !GuiAnimator.GetBool("IsDisplayed"))
             {
-                GuiAnimator.SetTrigger("update");
+                if (!ErrorAnimator.GetBool("errorIsShown"))
+                {
+                    GuiAnimator.SetTrigger("update");
+                }
+                StartCoroutine(Wait(received));
+                lastReceivedMessage = received;
+                Debug.Log("update");
             }
-            StartCoroutine(Wait(received));
+            else if (fenReceived && GuiAnimator.GetBool("IsDisplayed"))
+            {
+                lastReceivedMessage = received;
+                Debug.Log("stored");
+            }
+            else
+            {
+                lastReceivedMessage = received;
+                StartCoroutine(Wait(received));
+                Debug.Log("first");
+            }
         }
     }
 
     IEnumerator Wait(AmqpExchangeReceivedMessage received)
     {
         yield return new WaitForSeconds(0.25F);
-        GuiAnimator.SetTrigger("show");
         // First convert the message's body, which is a byte array, into a string
         // example fen string: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 g1f3
         string receivedString = System.Text.Encoding.UTF8.GetString(received.Message.Body);
-        if (receivedString.Split(' ')[0] == "ERROR1")
+        if (receivedString.Substring(0, 5) == "ERROR")
         {
-
+            PathController.receiveError(receivedString);
+            ErrorAnimator.SetBool("errorIsShown", true);
         }
-        else if (receivedString.Split(' ')[0] == "ERROR2")
+        else if (receivedString.Substring(0, 4) == "CHECK")
         {
-
+            PathController.receiveError(receivedString);
+            ErrorAnimator.SetBool("errorIsShown", true);
         }
-        else if (receivedString.Split(' ')[0] == "ERROR3")
+        else if (receivedString.Split(' ')[0] == "CHECKMATED")
         {
-
-        }
-        else if (receivedString.Split(' ')[0] == "ERROR4")
-        {
-
+            GuiAnimator.SetTrigger("show");
+            UiManager.enableDarkOverlay();
+            UiManager.enableCheckmatedPanel();
+            UiManager.disableWaitingPanel();
+            UiManager.setCurrentPlayer(receivedString.Split(' ')[1]);
         }
         else
         {
             fenString = receivedString.Replace(System.Environment.NewLine, "");
             PathController.receiveFen(fenString);
             fenReceived = true;
+            ErrorAnimator.SetBool("errorIsShown", false);
+            GuiAnimator.SetTrigger("show");
+            UiManager.disableDarkOverlay();
+            UiManager.disableCheckmatedPanel();
+            UiManager.disableWaitingPanel();
         }
+    }
+
+    public void update()
+    {
+        StartCoroutine(Wait(lastReceivedMessage));
     }
 }

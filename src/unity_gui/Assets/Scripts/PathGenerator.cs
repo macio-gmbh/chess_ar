@@ -70,11 +70,16 @@ public class PathGenerator : MonoBehaviour {
         UiManager.receiveFenString(fenString, board);
 
         generateDepthMaskFigures();
+        generateDepthMaskFigureMaterialList(bestMove);
+    }
+
+    public void receiveError(string errorString)
+    {
+        UiManager.setError(errorString);
     }
     
     public void generateBestMove()
     {
-        resetDepthMaskFigureMaterialList();
         Destroy(startPlane);
         Destroy(endPlane);
         if (!bestMoveIsRunning)
@@ -99,14 +104,7 @@ public class PathGenerator : MonoBehaviour {
 
                     instantiateSingleFigure(getFigure(8 - line1, col1 - 1), line1, col1);
                     jumpingFigure.setFigure(currentFigure, startPosition, endPosition, diffColumn, diffLine, getFigure(8 - line1, col1 - 1).getType());
-
-                    depthMaskFigureMaterialList.Add(getDepthMaskObject(8 - line1, col1 - 1));
-                    if (getFigure(8 - line2, col2 - 1).getType() != Figure.FigureType.EMPTY)
-                    {
-                        depthMaskFigureMaterialList.Add(getDepthMaskObject(8 - line2, col2 - 1));
-                    }
-                    setShader(depthMaskFigureMaterial);
-
+                    
                     startPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
                     startPlane.transform.position = new Vector3(calculateXPosition(col1), depth, calculateZPosition(line1));
                     startPlane.transform.localScale = new Vector3(width, 1, calculateHeight(line1));
@@ -196,6 +194,23 @@ public class PathGenerator : MonoBehaviour {
     {
         setShader(depthMaskMaterial);
         depthMaskFigureMaterialList = new List<GameObject>();
+    }
+
+    public void generateDepthMaskFigureMaterialList(string BestMove)
+    {
+        depthMaskFigureMaterialList = new List<GameObject>();
+
+        int col1 = getColumn(bestMove.Substring(0, 1));
+        int col2 = getColumn(bestMove.Substring(2, 1));
+        int line1 = getLine(bestMove.Substring(1, 1));
+        int line2 = getLine(bestMove.Substring(3, 1));
+
+        depthMaskFigureMaterialList.Add(getDepthMaskObject(8 - line1, col1 - 1));
+        if (getFigure(8 - line2, col2 - 1).getType() != Figure.FigureType.EMPTY)
+        {
+            depthMaskFigureMaterialList.Add(getDepthMaskObject(8 - line2, col2 - 1));
+        }
+        setShader(depthMaskFigureMaterial);
     }
 
     public void generatePath(string fen)

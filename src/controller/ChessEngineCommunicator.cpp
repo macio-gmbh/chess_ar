@@ -48,7 +48,9 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 	std::size_t pos = res.find("bestmove");
 
 	if (pos != std::string::npos) {
-		res = res.substr(pos).substr(9, 4);
+		res = res.substr(pos).substr(9);
+		res = res.substr(0, res.length() - 1);
+		std::cout << res << "\n";
 	}
 	else {
 		res = "(none)";
@@ -94,7 +96,8 @@ bool ChessEngineCommunicator::moveIsValid(const char* fen, const char* move) {
 	std::string res = exec("stockfish < input.txt");
 	std::size_t pos = res.find("bestmove");
 	if (pos != std::string::npos) {
-		res = res.substr(pos).substr(9, 4);
+		res = res.substr(pos).substr(9);
+		res = res.substr(0, res.length() - 1);
 		std::cout << res << "\n";
 		if (res == move) {
 			return true;
@@ -111,4 +114,29 @@ void ChessEngineCommunicator::clearInputFile(const char *outFilename) {
 		exit(EXIT_FAILURE);
 	}
 	ofs.close();
+}
+
+bool ChessEngineCommunicator::isCheck(const char* fen) {
+	std::ofstream input(this->inputFile);
+	clearInputFile(this->inputFile);
+	input << "setoption name Hash value 128\n";
+	input << "setoption name threads value 1\n";
+	input << "position fen ";
+	input << fen;
+	input << "\n";
+	input << "d";
+	input << "\n";
+	input.close();
+
+	std::string res = exec("stockfish < input.txt");
+	std::size_t pos = res.find("Checkers:");
+
+	if (pos != std::string::npos) {
+		res = res.substr(pos).substr(9);
+		std::cout << res << "\n";
+		if (res.length() > 2) {
+			return true;
+		}
+	}
+	return false;
 }

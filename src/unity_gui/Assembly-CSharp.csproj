@@ -75,6 +75,7 @@
      <Compile Include="Assets\Scripts\GuiManager.cs" />
      <Compile Include="Assets\Scripts\JumpAnimator.cs" />
      <Compile Include="Assets\Scripts\PathGenerator.cs" />
+     <Compile Include="Assets\Scripts\Publisher.cs" />
      <Compile Include="Assets\Scripts\Receiver.cs" />
      <Compile Include="Assets\Vuforia\Scripts\DefaultInitializationErrorHandler.cs" />
      <Compile Include="Assets\Vuforia\Scripts\DefaultSmartTerrainEventHandler.cs" />

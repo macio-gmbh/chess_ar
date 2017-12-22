@@ -53,10 +53,15 @@ public class ChessBoard : ScriptableObject
         for (int line = 0; line < board.GetLength(0); line++) {
             for (int col = 0; col < board.GetLength(1); col++)
             {
+                Debug.Log("Line: " + line);
+                Debug.Log("Column: " + col);
                 Figure aFigure = getFigure(line, col);
-                if (aFigure.getPlayer() == aPlayer)
+                if (aFigure != null)
                 {
-                    figures.Add(aFigure);
+                    if (aFigure.getPlayer() == aPlayer)
+                    {
+                        figures.Add(aFigure);
+                    }
                 }
             }
         }
