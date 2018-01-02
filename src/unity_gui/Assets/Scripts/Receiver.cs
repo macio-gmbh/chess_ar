@@ -107,11 +107,11 @@ public class Receiver : MonoBehaviour
         }
         else
         {
+            GuiAnimator.SetTrigger("show");
             fenString = receivedString.Replace(System.Environment.NewLine, "");
             PathController.receiveFen(fenString);
             fenReceived = true;
             ErrorAnimator.SetBool("errorIsShown", false);
-            GuiAnimator.SetTrigger("show");
             UiManager.disableDarkOverlay();
             UiManager.disableCheckmatedPanel();
             UiManager.disableWaitingPanel();

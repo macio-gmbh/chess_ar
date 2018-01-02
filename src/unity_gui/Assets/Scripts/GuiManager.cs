@@ -120,12 +120,7 @@ public class GuiManager : MonoBehaviour {
         else
         {
             BestMoveText.text = aBestMove.Substring(0, 2).ToUpper() + " - " + aBestMove.Substring(2, 2).ToUpper();
-            int figureType = (int) board.getFigure(8 - getLine(aBestMove.Substring(1, 1)), getColumn(aBestMove.Substring(0, 1)) - 1).getType();
-            Debug.Log(aBestMove);
-            Debug.Log("Figure col: " + (getColumn(aBestMove.Substring(0, 1))));
-            Debug.Log("Figure line: " + (getLine(aBestMove.Substring(1, 1))));
-            Debug.Log("asdf "+ board.getFigure(8 - getLine(aBestMove.Substring(1, 1)), getColumn(aBestMove.Substring(0, 1)) - 1).getType());
-            Debug.Log("bestMove FigureType: " + figureType);
+            int figureType = (int) board.getFigure(8 - getLine(aBestMove.Substring(1, 1)), getColumn(aBestMove.Substring(0, 1)) - 1).getFigureType();
             bestMoveImage.sprite = iconImages[figureType];
         }
     }
@@ -192,7 +187,7 @@ public class GuiManager : MonoBehaviour {
         List<Figure> figureList = board.getFiguresOfPlayer(currentPlayer);
         foreach (Figure aFigure in figureList)
         {
-            Figure.FigureType aType = aFigure.getType();
+            Figure.FigureType aType = aFigure.getFigureType();
             Button but;
 
             if (Figure.FigureType.PAWN == aType)

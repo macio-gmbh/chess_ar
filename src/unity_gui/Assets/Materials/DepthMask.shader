@@ -4,7 +4,7 @@
 		// Render the mask after regular geometry, but before masked geometry and
 		// transparent things.
  
-		Tags {"Queue" = "Geometry-1" }
+		Tags {"Queue" = "Geometry-2" }
  
 		// Don't draw in the RGBA channels; just the depth buffer
  

@@ -70,7 +70,7 @@ public class PathGenerator : MonoBehaviour {
         UiManager.receiveFenString(fenString, board);
 
         generateDepthMaskFigures();
-        generateDepthMaskFigureMaterialList(bestMove);
+        //generateDepthMaskFigureMaterialList(bestMove);
     }
 
     public void receiveError(string errorString)
@@ -97,13 +97,13 @@ public class PathGenerator : MonoBehaviour {
 
                 int diffLine = line1 > line2 ? line1 - line2 : line2 - line1;
 
-                if (getFigure(8 - line1, col1 - 1).getType() != Figure.FigureType.EMPTY)
+                if (getFigure(8 - line1, col1 - 1).getFigureType() != Figure.FigureType.EMPTY)
                 {
                     Vector3 startPosition = new Vector3(calculateXPosition(col1), depth, calculateZPosition(line1));
                     Vector3 endPosition = new Vector3(calculateXPosition(col2), depth, calculateZPosition(line2));
 
                     instantiateSingleFigure(getFigure(8 - line1, col1 - 1), line1, col1);
-                    jumpingFigure.setFigure(currentFigure, startPosition, endPosition, diffColumn, diffLine, getFigure(8 - line1, col1 - 1).getType());
+                    jumpingFigure.setFigure(currentFigure, startPosition, endPosition, diffColumn, diffLine, getFigure(8 - line1, col1 - 1).getFigureType());
                     
                     startPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
                     startPlane.transform.position = new Vector3(calculateXPosition(col1), depth, calculateZPosition(line1));
@@ -146,10 +146,13 @@ public class PathGenerator : MonoBehaviour {
             for (int col = 0; col < 8; col++)
             {
                 figure = board.getFigure(line, col);
-                if (figure.getType() != Figure.FigureType.EMPTY)
+                //Debug.Log("Line: " + line);
+                //Debug.Log("Column: " + col);
+                //Debug.Log(figure.getFigureType());
+                if (figure.getFigureType() != Figure.FigureType.EMPTY)
                 {
-                    Vector3 scale = figure.getType() != Figure.FigureType.PAWN ? new Vector3(275, 275, 275) : new Vector3(250, 250, 250);
-                    GameObject obj = Instantiate(depthMaskFigures[(int)figure.getType()], new Vector3(calculateXPosition(1 + col), depth, calculateZPosition(8 - line)), getQuaternion(figure));
+                    Vector3 scale = figure.getFigureType() != Figure.FigureType.PAWN ? new Vector3(275, 275, 275) : new Vector3(250, 250, 250);
+                    GameObject obj = Instantiate(depthMaskFigures[(int)figure.getFigureType()], new Vector3(calculateXPosition(1 + col), depth, calculateZPosition(8 - line)), getQuaternion(figure));
                     obj.transform.parent = GameObject.Find("Figure").transform;
                     obj.transform.localScale = scale;
                     depthMaskList.Add(obj);
@@ -169,7 +172,7 @@ public class PathGenerator : MonoBehaviour {
             for (int j = 0; j < colLength; j++)
             {
                 figure = board.getFigure(i, j);
-                if (figure.getType() != Figure.FigureType.EMPTY)
+                if (figure.getFigureType() != Figure.FigureType.EMPTY)
                 {
                     index++;
                 }
@@ -206,7 +209,7 @@ public class PathGenerator : MonoBehaviour {
         int line2 = getLine(bestMove.Substring(3, 1));
 
         depthMaskFigureMaterialList.Add(getDepthMaskObject(8 - line1, col1 - 1));
-        if (getFigure(8 - line2, col2 - 1).getType() != Figure.FigureType.EMPTY)
+        if (getFigure(8 - line2, col2 - 1).getFigureType() != Figure.FigureType.EMPTY)
         {
             depthMaskFigureMaterialList.Add(getDepthMaskObject(8 - line2, col2 - 1));
         }
@@ -234,7 +237,7 @@ public class PathGenerator : MonoBehaviour {
                 
                 int diffLine = line1 > line2 ? line1 - line2 : line2 - line1;
 
-                if (getFigure(line1 - 1, col1 - 1).getType() != Figure.FigureType.EMPTY)
+                if (getFigure(line1 - 1, col1 - 1).getFigureType() != Figure.FigureType.EMPTY)
                 {
                     //aFigure.SetEndPosition(new Vector3(12 + 38 * col2, 20F, 14 + 38 * line2));
                     //aFigure.InstantiateFigure(getFigure(line1 - 1, col1 - 1).getType(), new Vector3(12 + 38 * col1, 20F, 14 + 38 * line1), board.GetPlayer());
@@ -428,12 +431,20 @@ public class PathGenerator : MonoBehaviour {
     {
         if (currentFigure != null)
         {
+            Destroy(currentFigure);
+        }
+        currentFigure = Instantiate(figureList[(int)aFigure.getFigureType()]);
+        currentFigure.transform.SetPositionAndRotation(new Vector3(calculateXPosition(col), depth, calculateZPosition(line)), getQuaternion(aFigure));
+        currentFigure.transform.parent = GameObject.Find("Figure").transform;
+        /*
+        if (currentFigure != null)
+        {
             currentFigure.SetActive(false);
         }
-        currentFigure = figureList[(int)aFigure.getType()];
+        currentFigure = figureList[(int)aFigure.getFigureType()];
         currentFigure.SetActive(true);
         currentFigure.transform.SetPositionAndRotation(new Vector3(calculateXPosition(col), depth, calculateZPosition(line)), getQuaternion(aFigure));
-
+        */
     }
     
     private float calculateXPosition(int col)

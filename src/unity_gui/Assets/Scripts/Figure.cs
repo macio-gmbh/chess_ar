@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
-using UnityEditor;
 
-public class Figure : ScriptableObject
+public class Figure
 {
-    private FigureType type;
+    private FigureType ftype;
     private Player player;
 
     public enum FigureType
@@ -29,58 +28,64 @@ public class Figure : ScriptableObject
         switch (figureShortName)
         {
             case 'p':
-                type = FigureType.PAWN;
+                ftype = FigureType.PAWN;
                 player = Player.BLACK;
                 break;
             case 'P':
-                type = FigureType.PAWN;
+                ftype = FigureType.PAWN;
                 player = Player.WHITE;
                 break;
             case 'b':
-                type = FigureType.BISHOP;
+                ftype = FigureType.BISHOP;
                 player = Player.BLACK;
                 break;
             case 'B':
-                type = FigureType.BISHOP;
+                ftype = FigureType.BISHOP;
                 player = Player.WHITE;
                 break;
             case 'n':
-                type = FigureType.KNIGHT;
+                ftype = FigureType.KNIGHT;
                 player = Player.BLACK;
                 break;
             case 'N':
-                type = FigureType.KNIGHT;
+                ftype = FigureType.KNIGHT;
                 player = Player.WHITE;
                 break;
             case 'r':
-                type = FigureType.ROOK;
+                ftype = FigureType.ROOK;
                 player = Player.BLACK;
                 break;
             case 'R':
-                type = FigureType.ROOK;
+                ftype = FigureType.ROOK;
                 player = Player.WHITE;
                 break;
             case 'q':
-                type = FigureType.QUEEN;
+                ftype = FigureType.QUEEN;
                 player = Player.BLACK;
                 break;
             case 'Q':
-                type = FigureType.QUEEN;
+                ftype = FigureType.QUEEN;
                 player = Player.WHITE;
                 break;
             case 'k':
-                type = FigureType.KING;
+                ftype = FigureType.KING;
                 player = Player.BLACK;
                 break;
             case 'K':
-                type = FigureType.KING;
+                ftype = FigureType.KING;
                 player = Player.WHITE;
                 break;
             default:
-                type = FigureType.EMPTY;
+                ftype = FigureType.EMPTY;
                 player = Player.NONE;
                 break;
         }
+    }
+
+    public Figure()
+    {
+        ftype = FigureType.EMPTY;
+        player = Player.NONE;
     }
 
     public Player getPlayer()
@@ -96,16 +101,20 @@ public class Figure : ScriptableObject
         }
     }
 
-    public FigureType getType()
+    public FigureType getFigureType()
     {
-        return type;
+        if (ftype == null || ftype == FigureType.EMPTY)
+        {
+            return FigureType.EMPTY;
+        }
+        return ftype;
     }
 
-    public void setType(FigureType aType)
+    public void setFigureType(FigureType aType)
     {
-        if (type != aType)
+        if (ftype != aType)
         {
-            type = aType;
+            ftype = aType;
         }
     }
 }

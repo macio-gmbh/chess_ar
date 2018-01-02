@@ -1,9 +1,8 @@
 ﻿using UnityEngine;
-using UnityEditor;
 using System;
 using System.Collections.Generic;
 
-public class ChessBoard : ScriptableObject
+public class ChessBoard
 {
     private string[] fenString;
     private Figure[,] board;
@@ -18,20 +17,22 @@ public class ChessBoard : ScriptableObject
         for (int line = 0; line < fenSeperate.Length; line++)
         {
             string lineOfFigures = fenSeperate[line];
-            for (int col = 0; col < lineOfFigures.Length; col++)
+            int col = 0;
+            for (int i = 0; i < lineOfFigures.Length; i++)
             {
-                if (Char.IsNumber(lineOfFigures[col]))
+                if (Char.IsNumber(lineOfFigures[i]))
                 {
-                    int emptyFields = (int) Char.GetNumericValue(lineOfFigures[col]);
+                    int emptyFields = (int) Char.GetNumericValue(lineOfFigures[i]);
                     for (int empty = 0; empty < emptyFields; empty++)
                     {
-                        board[line, col + empty] = new Figure(lineOfFigures[col]);
+                        board[line, col + empty] = new Figure(lineOfFigures[i]);
                     }
-                    col += emptyFields - 1;
+                    col += emptyFields;
                 }
                 else
                 {
-                    board[line, col] = new Figure(lineOfFigures[col]);
+                    board[line, col] = new Figure(lineOfFigures[i]);
+                    col++;
                 }
             }
         }
@@ -53,8 +54,6 @@ public class ChessBoard : ScriptableObject
         for (int line = 0; line < board.GetLength(0); line++) {
             for (int col = 0; col < board.GetLength(1); col++)
             {
-                Debug.Log("Line: " + line);
-                Debug.Log("Column: " + col);
                 Figure aFigure = getFigure(line, col);
                 if (aFigure != null)
                 {
