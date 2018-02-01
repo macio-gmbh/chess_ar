@@ -9,6 +9,8 @@
 #include "../shared_lib/rabbitmq/RabbitMQReceiver.h"
 #include "ChessEngineCommunicator.h"
 
+#include <chrono>
+
 struct ChessField{
 	ChessFigure figure;
 	int field = 0;
@@ -28,6 +30,12 @@ bool blackQueenSideCastelling;
 bool whiteKingSideCastelling;
 bool whiteQueenSideCastelling;
 
+RabbitMQSender engineSender("localhost", 5672, "ControllerToEngine");
+RabbitMQReceiver engineReceiver("localhost", 5672, "EngineToController");
+RabbitMQSender guiSender("localhost", 5672, "ControllerToGui");
+RabbitMQReceiver eyeReceiver("localhost", 5672, "EyeToController");
+RabbitMQReceiver guiReceiver("localhost", 5672, "GuiToController");
+
 std::string enPassent;
 
 ChessColor  currentColor;
@@ -38,117 +46,23 @@ int64_t fullMove;
 
 std::vector<ChessField> CalculateDifference(ChessBoard lastBoard, ChessBoard currentBoard);
 
-Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, ChessEngineCommunicator engineCommunicator, const char* fen);
+Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, const char* fen);//ChessEngineCommunicator engineCommunicator, const char* fen);
 
 std::string ColumnToString(int column);
 
 std::string FigureTypeToString(FigureType aType);
 
-void setCastling(ChessBoard aBoard);
+void setCastling(ChessBoard& aBoard);
 
-/*
-Error ValidateMove(std::vector<ChessField> differentFields, ChessColor currentPlayer, bool kingInChess, ChessBoard lastBoard) {
-	ChessFigure firstFigure = differentFields.at(0).figure;
-	int firstField = differentFields.at(0).field;
-
-	ChessFigure secondFigure = differentFields.at(1).figure;
-	int secondField = differentFields.at(1).field;
-
-	if (!(firstFigure.figure_type != EMPTY && secondFigure.figure_type != EMPTY)) {
-		ChessFigure currentFigure;
-		int field;
-		if (firstFigure.figure_type != EMPTY) {
-			currentFigure = firstFigure;
-			field = firstField;
-		}
-		else {
-			currentFigure = secondFigure;
-			field = secondField;
-		}
-		//Falsche Spielerfigur wurde bewegt
-		if (currentFigure.color != currentPlayer) {
-			return WRONG_PLAYER;
-		}
-		//Spieler schlägt seine eigene Figur
-		if (lastBoard.GetBoard().at(field).color == currentFigure.color) {
-			return WRONG_MOVE;
-		}
-		//Auge hat eine falsche Figur generiert, wenn zwei Figuren auf einem Feld stehen
-		if ((lastBoard.GetBoard().at(firstField).figure_type != currentFigure.figure_type) ||
-			(lastBoard.GetBoard().at(secondField).figure_type != currentFigure.figure_type)) {
-			return INVALID_BOARD;
-		}
-
-		//Richtig gezogen
-		int firstColumn = differentFields.at(0).field % 8;
-		int firstLine = differentFields.at(0).field / 8;
-		int secondColumn = differentFields.at(1).field % 8;
-		int secondLine = differentFields.at(1).field / 8;
-
-		int diffCol = firstColumn < secondColumn ? secondColumn - firstColumn : firstColumn - secondColumn;
-		int diffLine = firstLine < secondLine ? secondLine - firstLine : firstLine - secondLine;
-
-		switch (currentFigure.figure_type) {
-		case KING:
-			if (!((diffCol == 1) || (diffLine == 1))) {
-				return WRONG_MOVE;
-			}
-
-			break;
-		case QUEEN:
-			if (!((diffCol == 0 || diffLine == 0) || (diffCol == diffLine))) {
-				return WRONG_MOVE;
-			}
-			break;
-		case ROOK:
-			if (!(diffCol == 0 || diffLine == 0)) {
-				return WRONG_MOVE;
-			}
-			break;
-		case BISHOP:
-			if (!(diffCol == diffLine)) {
-				return WRONG_MOVE;
-			}
-			break;
-		case KNIGHT:
-			if (!((diffCol == 1 && diffLine == 2) || (diffCol == 2 && diffLine == 1))) {
-				return WRONG_MOVE;
-			}
-			break;
-		case PAWN: break;
-		default:
-			return INVALID_BOARD;
-		}
-
-
-	}
-	else {
-		return INVALID_SWAP;
-	}
-
-	return NO_ERROR;
-}*/
+void startNewGame();
 
 int main() {
 
 
 
     std::cout << "Hello, World from controller! Initialising ..." << std::endl;
-    //std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-    //ChessBoard currentBoard= ChessBoard(initialBoard);
-    //ChessBoard lastBoard= ChessBoard(initialBoard);
-
-    //std::cout<< "Initial Setup Test: " << currentBoard.toString() <<std::endl;
     bool inital = true;
-
-    //Zobrist currentZobrist;
-
-    ChessEngineCommunicator engineCommunicator = ChessEngineCommunicator();
-	
-    RabbitMQSender guiSender("localhost", 5672, "ControllerToGui");
-    RabbitMQReceiver eyeReceiver("localhost",5672, "EyeToController");
-	RabbitMQReceiver guiReceiver("localhost", 5672, "GuiToController");
 
     blackKingSideCastelling = true;
     blackQueenSideCastelling = true;
@@ -168,19 +82,45 @@ int main() {
 
 
 	std::string sendStr;
-	std::string initialBoard = eyeReceiver.Receive();
-	ChessBoard currentBoard = ChessBoard(initialBoard);
-	
-	setCastling(currentBoard);
+	std::string engineSendStr;
 
-	sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
-	std::cout << sendStr.c_str() << "\n";;
+	std::string initialBoard = eyeReceiver.Receive();
+	__int64 t1 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	std::cout << "Tick 1: " << t1 << std::endl;
+
+	ChessBoard currentBoard = ChessBoard(initialBoard);
+	setCastling(currentBoard);
+	
+	engineSendStr = "askStockfish>" + currentBoard.toString();
+
+	std::cout << engineSendStr << std::endl;
+	
+	engineSender.Send(engineSendStr.c_str());
+	__int64 t2 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	__int64 diff1 = t2 - t1;
+	std::cout << "Tick 2: " << t2 << std::endl;
+	std::cout << "diff 1: " << diff1 << std::endl;
+
+	sendStr = currentBoard.toString() + " " + engineReceiver.Receive();//engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+	__int64 t3 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	__int64 diff2 = t3 - t2;
+	std::cout << "Tick 3: " << t3 << std::endl;
+	std::cout << "diff 2: " << diff2 << std::endl;
+
+	std::cout << sendStr.c_str() << "\n";
+
+
 	guiSender.Send(sendStr.c_str());
+	__int64 t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	std::cout << "Tick 4: " << t4 << std::endl;
+
 	ChessBoard lastBoard = currentBoard;
 	Zobrist currentZobrist(initialBoard);
 
     while (true) {
   	  std::string nextBoard = eyeReceiver.Receive();
+	  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	  std::cout << "von eye: " << t4 << std::endl;
       Zobrist newZobrist(nextBoard);
 
 	  if (currentZobrist.zobristHash != newZobrist.zobristHash) {
@@ -189,7 +129,7 @@ int main() {
 
 		  std::vector<ChessField> difference = CalculateDifference(lastBoard, currentBoard);
 
-		  Error error = ValidateMove(difference, lastBoard, engineCommunicator, lastBoard.toString().c_str());
+		  Error error = ValidateMove(difference, lastBoard, lastBoard.toString().c_str());//engineCommunicator, lastBoard.toString().c_str());
 
 		  if (error == NO_ERROR) {
 			  std::cout << "all correct" << "\n";;
@@ -205,14 +145,28 @@ int main() {
 			  currentBoard.setCurrentMove(currentColor);
 			  std::cout << enPassent << "\n";
 			  currentBoard.setEnPassent(enPassent);
-			  currentBoard.setCastling(blackKingSideCastelling, blackQueenSideCastelling, whiteKingSideCastelling, whiteQueenSideCastelling);
+			  setCastling(currentBoard);
 			  currentBoard.setHalfMove(halfMove);
 
-			  std::string bestMove = engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
-			  if (bestMove == "(none)") {
-				  std::string player = currentColor == WHITE ? "w" : "b";
-				  sendStr = "CHECKMATED " + player;
+			  engineSendStr = "askStockfish>" + currentBoard.toString();
+			  engineSender.Send(engineSendStr.c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "an engine: " << t4 << std::endl;
+			  std::string bestMove = engineReceiver.Receive();//engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "von engine: " << t4 << std::endl;
+			  if (bestMove == "(none)" || halfMove == 50) {
+				  std::string player;
+				  if (bestMove == "(none)") {
+					  player = currentColor == WHITE ? "w" : "b";
+					  sendStr = "CHECKMATED " + player;
+				  }
+				  else {
+					  sendStr = "REMIS";
+				  }
 				  guiSender.Send(sendStr.c_str());
+				  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				  std::cout << "an ui: " << t4 << std::endl;
 
 				  std::string guiMessage = guiReceiver.Receive();
 
@@ -239,21 +193,31 @@ int main() {
 					  currentBoard = ChessBoard(initialBoard);
 					  lastBoard = currentBoard;
 
-					  sendStr = currentBoard.toString() + " " + engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+					  engineSendStr = "askStockfish>" + currentBoard.toString();
+					  engineSender.Send(engineSendStr.c_str());
+					  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					  std::cout << "an engine: " << t4 << std::endl;
+					  sendStr = currentBoard.toString() + " " + engineReceiver.Receive();//engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
+					  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					  std::cout << "von engine: " << t4 << std::endl;
 					  std::cout << sendStr << "\n";
 					  guiSender.Send(sendStr.c_str());
+					  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+					  std::cout << "an ui: " << t4 << std::endl;
 				  }
 				  else if (guiMessage == "quit") {
 					  return 0;
 				  }
 			  }
-			  else if (halfMove == 50) {
-				  guiSender.Send("REMIS");
-			  }
+			  //else if (halfMove == 50) {
+			  //	  guiSender.Send("REMIS");
+			  //}
 			  else {
 				  sendStr = currentBoard.toString() + " " + bestMove;
 				  std::cout << sendStr << "\n";
 				  guiSender.Send(sendStr.c_str());
+				  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+				  std::cout << "an ui: " << t4 << std::endl;
 			  }
 
 			  lastBoard = currentBoard;
@@ -262,14 +226,18 @@ int main() {
 			  ChessFigure missingFigure = difference.at(0).figure;
 			  int line = 8 - (difference.at(0).field / 8);
 			  std::string field = ColumnToString(difference.at(0).field % 8) + std::to_string(line);
-			  sendStr = "ERROR1 " + FigureTypeToString(missingFigure.figure_type) + field;
+			  sendStr = "ERROR1 " + field;
 			  std::cout << sendStr << "\n";
 			  guiSender.Send(sendStr.c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "an ui: " << t4 << std::endl;
 		  }
 		  else if (error == INVALID_BOARD) {
 			  sendStr = "ERROR2";
 			  std::cout << sendStr << "\n";
 			  guiSender.Send(sendStr.c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "an ui: " << t4 << std::endl;
 
 		  }
 		  else if (error == WRONG_MOVE) {
@@ -299,57 +267,29 @@ int main() {
 			  sendStr = "ERROR3 " + FigureTypeToString(currentFigure.figure_type) + move;
 			  std::cout << sendStr << "\n";
 			  guiSender.Send(sendStr.c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "an ui: " << t4 << std::endl;
 		  }
 		  else if (error == EYE_ERROR) {
 			  sendStr = "ERROR4";
 			  std::cout << sendStr << "\n";
 			  guiSender.Send(sendStr.c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "an ui: " << t4 << std::endl;
 		  }
 		  else if (error == CHECK) {
 			  std::string player = currentColor == WHITE ? "w" : "b";
 			  sendStr = "CHECK " + player;
 			  std::cout << sendStr << "\n";
 			  guiSender.Send(sendStr.c_str());
+			  t4 = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+			  std::cout << "an ui: " << t4 << std::endl;
 		  }
 		  
 	  }
 	  else {
 		  std::cout << "no difference";
 	  }
-	  /*
-      if(currentZobrist.zobristHash != newZobrist.zobristHash || inital) {
-
-          if(!inital ) {
-              lastBoard = currentBoard;
-              currentZobrist = newZobrist;
-              currentBoard = ChessBoard(nextBoard);
-              if (currentColor == ChessColor::WHITE) {
-                  currentColor = ChessColor::BLACK;
-
-              } else {
-                  currentColor = ChessColor::WHITE;
-                  fullMove += 1;
-              }
-              currentBoard.fullMove = fullMove;
-              currentBoard.currentMove = currentColor;
-          } else {
-              inital = false;
-          }*/
-          /*
-             * TODO:
-             * 1. Check if the next board is a valid
-             * 2. Check if there is still a casteling right
-             *    -set The coressponding values in the board
-             * 3. Check if there was an enpassent
-             *    -set the coressponding values in the board
-             * 4. Set the current moves color in the board
-             * 5. Set the current move number in the board
-             * 6. Set the current half move number in the board
-             */
-           //Send and receive best move Request
-		   /*sendStr = currentBoard.toString()+ " " +engineCommunicator.askStockfishForBestMove(currentBoard.toString().c_str());
-           guiSender.Send(sendStr.c_str());
-        }*/
    }
    return 0;
 }
@@ -364,7 +304,7 @@ std::vector<ChessField> CalculateDifference(ChessBoard lastBoard, ChessBoard cur
 	ChessField aField;
 
 	for (int field = 0; field < 64; field++) {
-		if (lastBoardSituation.at(field).color != currentBoardSituation.at(field).color &&
+		if (lastBoardSituation.at(field).color != currentBoardSituation.at(field).color ||
 			lastBoardSituation.at(field).figure_type != currentBoardSituation.at(field).figure_type) {
 			aField.figure = currentBoardSituation.at(field);
 			aField.field = field;
@@ -376,8 +316,14 @@ std::vector<ChessField> CalculateDifference(ChessBoard lastBoard, ChessBoard cur
 	return difference;
 }
 
-Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, ChessEngineCommunicator engineCommunicator, const char* fen) {
+Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, const char* fen) {//ChessEngineCommunicator engineCommunicator, const char* fen) {
 	std::string move;
+	std::string engineSendStr;
+	std::string engineReceiveStr;
+	std::string fenStr = fen;
+	bool moveIsValid = false;
+	bool isCheck = false;
+
 	if (difference.size() == 1) {
 		return MISSING_FIGURE;
 	}
@@ -414,7 +360,19 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 		move = ColumnToString(lastKingField % 8) + std::to_string(lastKingFieldLine) +
 			   ColumnToString(currentKingField.field % 8) + std::to_string(currentKingFieldLine);
 		
-		if (engineCommunicator.moveIsValid(fen, move.c_str())) {
+		engineSendStr = "moveIsValid>" + fenStr + ">" + move;
+		engineSender.Send(engineSendStr.c_str());
+		engineReceiveStr = engineReceiver.Receive();
+		std::cout << engineReceiveStr << "\n";
+		moveIsValid = engineReceiveStr == "true" ? true : false ;
+
+		engineSendStr = "isCheck>" + fenStr;
+		engineSender.Send(engineSendStr.c_str());
+		engineReceiveStr = engineReceiver.Receive();
+		std::cout << engineReceiveStr << "\n";
+		isCheck = engineReceiveStr == "true" ? true : false;
+
+		if (moveIsValid) {//engineCommunicator.moveIsValid(fen, move.c_str())) {
 			//set Castling
 			if (currentColor == WHITE) {
 				if (currentKingField.field % 8 == 2) {
@@ -439,10 +397,11 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 			halfMove++;
 			return NO_ERROR;
 		}
-		else if (engineCommunicator.isCheck(fen)) {
+		else if (isCheck) {//engineCommunicator.isCheck(fen)) {
 			std::cout << "check" << "\n";
 			return CHECK;
 		}
+		return WRONG_MOVE;
 	}
 	else if (difference.size() == 2) {
 		ChessFigure currentFigure;
@@ -476,7 +435,13 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, Che
 		move = ColumnToString(lastField % 8) + std::to_string(lastLine) +
 			   ColumnToString(currentField % 8) + std::to_string(currentLine);
 
-		if (engineCommunicator.moveIsValid(fen, move.c_str())) {
+		engineSendStr = "moveIsValid>" + fenStr + ">" + move;
+		engineSender.Send(engineSendStr.c_str());
+		engineReceiveStr = engineReceiver.Receive();
+		std::cout << engineReceiveStr << "\n";
+		moveIsValid = engineReceiveStr == "true" ? true : false;
+
+		if (moveIsValid) {//engineCommunicator.moveIsValid(fen, move.c_str())) {
 			halfMove++;
 			//enPassent
 			if (currentFigure.figure_type == PAWN) {
@@ -537,7 +502,7 @@ std::string FigureTypeToString(FigureType aType) {
 	}
 }
 
-void setCastling(ChessBoard aBoard) {
+void setCastling(ChessBoard& aBoard) {
 	std::array<ChessFigure, 64> board = aBoard.GetBoard();
 	
 	bool blackKingSide = true;
@@ -572,4 +537,8 @@ void setCastling(ChessBoard aBoard) {
 	blackQueenSideCastelling = blackQueenSide;
 	whiteKingSideCastelling = whiteKingSide;
 	whiteQueenSideCastelling = whiteQueenSide;
+}
+
+void startNewGame() {
+
 }

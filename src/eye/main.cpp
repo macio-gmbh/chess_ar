@@ -109,202 +109,296 @@ void LoadConfig()
 
 int main()
 {
-    // create the image output folder
-    boost::filesystem::create_directories(imagePath);
+	std::string answer;
+	std::cout << "Use simulitation? (y/n): ";
+	std::cin >> answer;
 
-    LoadConfig();
+	if (answer == "y") {
+		RabbitMQSender sender("localhost", 5672, "EyeToController");
+		
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppp2pp/5p2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppp2pp/5p2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppp2pp/5p2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppp2pp/5p2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppp2pp/8/4p3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppp2pp/8/4p3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbqkbnr/pppp2pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
+		std::cout << "rnbqkbnr/pppp2pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppppk1pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/ppppk1pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppppk1pp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/ppppk1pp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/pppp1kpp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/pppp1kpp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/pppp1kpp/8/4Q3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/pppp1kpp/8/4Q3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppp2kpp/8/3pQ3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1"); //?????
+		std::cout << "rnbq1bnr/ppp2kpp/8/3pQ3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppp2kpp/8/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/ppp2kpp/8/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppp3pp/6k1/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/ppp3pp/6k1/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppp3pp/6k1/3BQ3/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/ppp3pp/6k1/3BQ3/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/ppp3p1/6k1/3BQ2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/ppp3p1/6k1/3BQ2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rnbq1bnr/pBp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rnbq1bnr/pBp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn1q1bnr/pbp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn1q1bnr/pbp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn1q1bnr/pbp3p1/6k1/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn1q1bnr/pbp3p1/6k1/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn1q1bnr/pbp3p1/7k/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn1q1bnr/pbp3p1/7k/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn1q1bnr/pbp3p1/7k/5Q1p/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn1q1bnr/pbp3p1/7k/5Q1p/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn1q1bnr/pbp5/7k/5Qpp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn1q1bnr/pbp5/7k/5Qpp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn1q1bnr/pbp2Q2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn1q1bnr/pbp2Q2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn3bnr/pbp1qQ2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn3bnr/pbp1qQ2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn3bnr/pbp1qQ2/7k/6Pp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn3bnr/pbp1qQ2/7k/6Pp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn3bnr/pbp2Q2/7k/6qp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+		std::cout << "rn3bnr/pbp2Q2/7k/6qp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+		sender.Send("rn3bnr/pbp2Q2/7k/6qR/3PP3/8/PPP2PP1/RNB1K3 w KQkq - 0 1");
+		std::cout << "rn3bnr/pbp2Q2/7k/6qR/3PP3/8/PPP2PP1/RNB1K3 w KQkq - 0 1" << std::endl;
+		std::cin >> answer;
+	}
+	else if (answer == "n") {
+		// create the image output folder
+		boost::filesystem::create_directories(imagePath);
 
-    Mat cameraMatrix, distCoeffs, newCamMatix;
-    Rect distortRoi;
+		LoadConfig();
 
-    if (!boost::filesystem::exists(calibPath))
-    {
-        std::cerr << "Can't find the calibration file" << std::endl;
-    }
-    else
-    {
-        try
-        {
-            // undisort the camera with the given calibration matrix
-            FileStorage fs2(calibPath.generic_string(), FileStorage::READ);
+		Mat cameraMatrix, distCoeffs, newCamMatix;
+		Rect distortRoi;
 
-            fs2["camera_matrix"] >> cameraMatrix;
-            fs2["distortion_coefficients"] >> distCoeffs;
+		if (!boost::filesystem::exists(calibPath))
+		{
+			std::cerr << "Can't find the calibration file" << std::endl;
+		}
+		else
+		{
+			try
+			{
+				// undisort the camera with the given calibration matrix
+				FileStorage fs2(calibPath.generic_string(), FileStorage::READ);
 
-            if (cameraMatrix.data && distCoeffs.data)
-            {
-                newCamMatix = getOptimalNewCameraMatrix(cameraMatrix, distCoeffs,
-                                                        Size(640, 480), 1, Size(1280, 720), &distortRoi);
-            }
-            else
-            {
-                std::cerr << "Camera calibration is invalid, using normal camera output." << std::endl;
-            }
-        }
-        catch (std::exception &ex)
-        {
-            std::cerr << ex.what() << std::endl;
-        }
-    }
+				fs2["camera_matrix"] >> cameraMatrix;
+				fs2["distortion_coefficients"] >> distCoeffs;
 
-    // load the pretrained SVMs
-    bishopSvm = bishopSvm->load("bishop.yml");
-    knightSvm = knightSvm->load("knight.yml");
-    pawnSvm = pawnSvm->load("pawn.yml");
-    queenSvm = queenSvm->load("queen.yml");
-    rookSvm = rookSvm->load("rook.yml");
-    kingSvm = kingSvm->load("king.yml");
-    blackSvm = blackSvm->load("black.yml");
+				if (cameraMatrix.data && distCoeffs.data)
+				{
+					newCamMatix = getOptimalNewCameraMatrix(cameraMatrix, distCoeffs,
+						Size(640, 480), 1, Size(1280, 720), &distortRoi);
+				}
+				else
+				{
+					std::cerr << "Camera calibration is invalid, using normal camera output." << std::endl;
+				}
+			}
+			catch (std::exception &ex)
+			{
+				std::cerr << ex.what() << std::endl;
+			}
+		}
 
-    RabbitMQSender sender("localhost", 5672, "EyeToController");
+		// load the pretrained SVMs
+		bishopSvm = bishopSvm->load("bishop.yml");
+		knightSvm = knightSvm->load("knight.yml");
+		pawnSvm = pawnSvm->load("pawn.yml");
+		queenSvm = queenSvm->load("queen.yml");
+		rookSvm = rookSvm->load("rook.yml");
+		kingSvm = kingSvm->load("king.yml");
+		blackSvm = blackSvm->load("black.yml");
 
-    std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    ChessBoard currentBoard = ChessBoard(initialBoard);
-    std::array<ChessFigure, 64> board;
-    cv::VideoCapture capture;
+		RabbitMQSender sender("localhost", 5672, "EyeToController");
 
-    // -1 == dont use the camera
-    if (cameraIndex != -1)
-    {
-        capture = cv::VideoCapture(cameraIndex);
-    }
+		std::string initialBoard = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+		ChessBoard currentBoard = ChessBoard(initialBoard);
+		std::array<ChessFigure, 64> board;
+		cv::VideoCapture capture;
 
-    // local variables need for the main loop
-    cv::Mat camFrame, gray, chessImage, originalImage, camFrameUndistort;
-    std::vector<std::vector<cv::Point> > quads;
-    std::vector<cv::Mat> chessFields;
+		// -1 == dont use the camera
+		if (cameraIndex != -1)
+		{
+			capture = cv::VideoCapture(cameraIndex);
+		}
 
-    bool staticImage = false;
+		// local variables need for the main loop
+		cv::Mat camFrame, gray, chessImage, originalImage, camFrameUndistort;
+		std::vector<std::vector<cv::Point> > quads;
+		std::vector<cv::Mat> chessFields;
 
-    // open the camera
-    if (USE_STATIC_IMAGE || !capture.isOpened())
-    {
-        std::cout << "cannot open camera, using the static image \n";
-        staticImage = true;
-        chessImage = cv::imread(staticImagePath.generic_string(), 1);
+		bool staticImage = false;
 
-        if (!chessImage.data)
-        {
-            fprintf(stderr, "No image data \n");
-            return -1;
-        }
+		// open the camera
+		if (USE_STATIC_IMAGE || !capture.isOpened())
+		{
+			std::cout << "cannot open camera, using the static image \n";
+			staticImage = true;
+			chessImage = cv::imread(staticImagePath.generic_string(), 1);
 
-        capture.release();
-        //return 0;
-    }
+			if (!chessImage.data)
+			{
+				fprintf(stderr, "No image data \n");
+				return -1;
+			}
 
-    //&& set the resolution from the webcam to 1280 x 720
-    capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-    capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
+			capture.release();
+			//return 0;
+		}
 
-    // main loop
-    while (true)
-    {
-        std::time(&currentTimestamp);
+		//&& set the resolution from the webcam to 1280 x 720
+		capture.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+		capture.set(CV_CAP_PROP_FRAME_HEIGHT, 720);
 
-        // get the image, from the camera or use the static image
-        if (!staticImage)
-        {
-            capture.read(camFrame);
-        }
-        else
-        {
-            // copy the opened test image to the camFrame so it wont be overwritten
-            chessImage.copyTo(camFrame);
-        }
+		// main loop
+		while (true)
+		{
+			std::time(&currentTimestamp);
 
-        camFrame.copyTo(originalImage);
+			// get the image, from the camera or use the static image
+			if (!staticImage)
+			{
+				capture.read(camFrame);
+			}
+			else
+			{
+				// copy the opened test image to the camFrame so it wont be overwritten
+				chessImage.copyTo(camFrame);
+			}
 
-        // undistort the image
-        if (newCamMatix.data)
-        {
-            undistort(camFrame, camFrameUndistort, cameraMatrix, distCoeffs, newCamMatix);
+			camFrame.copyTo(originalImage);
 
-            // crop the image if we got an roi
-            if (distortRoi.width > 0 && distortRoi.height > 0)
-                camFrameUndistort = Mat(camFrameUndistort, distortRoi);
-        }
-        else
-        {
-            // no disortion, use the normal image
-            camFrame.copyTo(camFrameUndistort);
-        }
+			// undistort the image
+			if (newCamMatix.data)
+			{
+				undistort(camFrame, camFrameUndistort, cameraMatrix, distCoeffs, newCamMatix);
 
-        // make a gray image
-        cvtColor(camFrameUndistort, gray, cv::COLOR_RGB2GRAY);
-        cv::Mat chessBoardRoi, grayBoardRoi;
+				// crop the image if we got an roi
+				if (distortRoi.width > 0 && distortRoi.height > 0)
+					camFrameUndistort = Mat(camFrameUndistort, distortRoi);
+			}
+			else
+			{
+				// no disortion, use the normal image
+				camFrame.copyTo(camFrameUndistort);
+			}
 
-        camFrame.copyTo(chessBoardRoi);
+			// make a gray image
+			cvtColor(camFrameUndistort, gray, cv::COLOR_RGB2GRAY);
+			cv::Mat chessBoardRoi, grayBoardRoi;
 
-        {
-            chessBoardRoi = FindChessboard(originalImage, gray);
-        }
+			camFrame.copyTo(chessBoardRoi);
 
-        cvtColor(chessBoardRoi, grayBoardRoi, cv::COLOR_RGB2GRAY);
-        {
-            // find the quads
-            quads = GetChessQuads(grayBoardRoi);
-            // test draw the contours onto the original image
-            DrawConotursRandomColor(chessBoardRoi, quads);
-        }
+			{
+				chessBoardRoi = FindChessboard(originalImage, gray);
+			}
 
-        {
-            // find the figures
-            DetectFigures(chessBoardRoi, grayBoardRoi, quads, board);
-        }
+			cvtColor(chessBoardRoi, grayBoardRoi, cv::COLOR_RGB2GRAY);
+			{
+				// find the quads
+				quads = GetChessQuads(grayBoardRoi);
+				// test draw the contours onto the original image
+				DrawConotursRandomColor(chessBoardRoi, quads);
+			}
+
+			{
+				// find the figures
+				DetectFigures(chessBoardRoi, grayBoardRoi, quads, board);
+			}
 
 
-        // TODO: Sanity checks for figure Creation
+			// TODO: Sanity checks for figure Creation
 
-        {
-            // send the chessboard via rabbitMQ
-            auto boardBeofreString = currentBoard.toString();
-            currentBoard.board = board;
-            auto boardAfterString = currentBoard.toString();
-            sender.Send(currentBoard.toString().c_str());
-        }
+			{
+				// send the chessboard via rabbitMQ
+				auto boardBeofreString = currentBoard.toString();
+				currentBoard.board = board;
+				auto boardAfterString = currentBoard.toString();
+				sender.Send(currentBoard.toString().c_str());
+			}
 
-        // show the input image in a window
-        if (chessBoardRoi.data)
-            imshow("cam", chessBoardRoi);
-        //imshow("gray", gray);
+			// show the input image in a window
+			if (chessBoardRoi.data)
+				imshow("cam", chessBoardRoi);
+			//imshow("gray", gray);
 
-        // check for key inputs
-        char key = cv::waitKey(30);
-        if (key == 'c')
-        {
-            imwrite(imagePath.generic_string() + "originalImage" +
-                    boost::lexical_cast<std::string>(currentTimestamp) + ".png", originalImage);
-            imwrite(imagePath.generic_string() + "chessBoardRoi" +
-                    boost::lexical_cast<std::string>(currentTimestamp) + ".png", chessBoardRoi);
+			// check for key inputs
+			char key = cv::waitKey(30);
+			if (key == 'c')
+			{
+				imwrite(imagePath.generic_string() + "originalImage" +
+					boost::lexical_cast<std::string>(currentTimestamp) + ".png", originalImage);
+				imwrite(imagePath.generic_string() + "chessBoardRoi" +
+					boost::lexical_cast<std::string>(currentTimestamp) + ".png", chessBoardRoi);
 
-        }
-        if (key == 'f')
-        {
-            writeNextFigures = true;
-        }
-        if (key == 'd')
-        {
-            debugDraw = !debugDraw;
-        }
-        if (key == 'r')
-        {
-            LoadConfig();
-        }
-        else if (key == 27)
-        {
-            break;
-        }
-    }
+			}
+			if (key == 'f')
+			{
+				writeNextFigures = true;
+			}
+			if (key == 'd')
+			{
+				debugDraw = !debugDraw;
+			}
+			if (key == 'r')
+			{
+				LoadConfig();
+			}
+			else if (key == 27)
+			{
+				break;
+			}
+		}
 
-    bishopSvm.release();
-    knightSvm.release();
-    pawnSvm.release();
-    queenSvm.release();
-    rookSvm.release();
-    kingSvm.release();
-    blackSvm.release();
-
+		bishopSvm.release();
+		knightSvm.release();
+		pawnSvm.release();
+		queenSvm.release();
+		rookSvm.release();
+		kingSvm.release();
+		blackSvm.release();
+	}
     return 0;
 }
 

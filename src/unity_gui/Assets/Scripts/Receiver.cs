@@ -54,7 +54,9 @@ public class Receiver : MonoBehaviour
     void HandleExchangeMessageReceived(AmqpExchangeReceivedMessage received)
     {
         string receivedString = System.Text.Encoding.UTF8.GetString(received.Message.Body);
-
+        System.DateTime epochStart = new System.DateTime(1970, 1, 1, 0, 0, 0, System.DateTimeKind.Utc);
+        long cur_time = (long)(System.DateTime.UtcNow - epochStart).TotalMilliseconds;
+        Debug.LogError(cur_time);
         if (receivedString != fenString)
         {
             if (fenReceived && !GuiAnimator.GetBool("IsDisplayed"))

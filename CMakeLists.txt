@@ -16,6 +16,7 @@ set(Boost_USE_STATIC_RUNTIME    OFF)
 
 # this needs to be here so it can be accessed from all targets
 find_package(Boost 1.50.0 COMPONENTS filesystem serialization REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system iostreams)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # RabbitMQ C library dependency
@@ -27,6 +28,7 @@ add_subdirectory(src/controller)
 add_subdirectory(src/eye)
 add_subdirectory(src/gui)
 add_subdirectory(src/rabbitmq_test)
+add_subdirectory(src/chess_engine)
 
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
