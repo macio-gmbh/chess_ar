@@ -37,6 +37,7 @@ std::string ChessEngineCommunicator::exec(const char* cmd) {
 }
 
 std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
+	/*
 	std::ofstream input(this->inputFile);
 	clearInputFile(this->inputFile);
 	input << "isready\n";
@@ -47,7 +48,7 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 	input << "go depth 4\n";
 	//input << "setoption name Skill Level value 10/n";
 	input.close();
-	std::string res = exec("glaurung-w32.exe < input.txt");//exec(cmd.c_str());
+	std::string res = exec("stockfish_8_x32.exe < input.txt");//exec(cmd.c_str());
 	std::cout << res << "\n";
 	std::size_t pos = res.find("bestmove");
 	
@@ -64,6 +65,55 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 	else {
 		res = "(none)";
 	}
+	*/
+	std::string res;
+	switch (halfmove)
+	{
+	case 1:
+		res = "e7e5";
+		break;
+	case 2:
+		res = "b1c3";
+		break;
+	case 3:
+		res = "h7h6";
+		break;
+	case 4:
+		res = "g1f3";
+		break;
+	case 5:
+		res = "d7d6";
+		break;
+	case 6:
+		res = "f1c4";
+		break;
+	case 7:
+		res = "c8g4";
+		break;
+	case 8:
+		res = "f3e5";
+		break;
+	case 9:
+		res = "g4d1";
+		break;
+	case 10:
+		res = "c4f7";
+		break;
+	case 11:
+		res = "e8e7";
+		break;
+	case 12:
+		res = "c3d5";
+		break;
+	case 13:
+		res = "(none)";
+		break;
+	default:
+		halfmove = 0;
+		res = "e2e4";
+		break;
+	}
+	this->halfmove++;
 	return res;
 }
 

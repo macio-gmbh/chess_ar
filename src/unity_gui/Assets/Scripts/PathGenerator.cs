@@ -22,6 +22,8 @@ public class PathGenerator : MonoBehaviour {
 
     public Material material;
 
+    public Material materialStrike;
+
     public Material depthMaskMaterial;
 
     public Material depthMaskFigureMaterial;
@@ -33,6 +35,9 @@ public class PathGenerator : MonoBehaviour {
 
     public GameObject[] figureList;
 
+    public Material whiteMaterial;
+
+    public Material blackMaterial;
     private bool bestMoveIsRunning = false;
 
     private List<GameObject> depthMaskList = new List<GameObject>();
@@ -43,6 +48,9 @@ public class PathGenerator : MonoBehaviour {
 
     private GameObject[] doubleFigures;
 
+    private string currentPlayer;
+
+    private string lastFen = "";
     protected const float xBorder = 11;
 
     protected const float zBorder = 14;
@@ -55,6 +63,10 @@ public class PathGenerator : MonoBehaviour {
 
     public void receiveFen(string fen)
     {
+        if (bestMoveIsRunning)
+        {
+            generateBestMove();
+        }
 
         fenString = fen.Split(' ');
 
@@ -62,6 +74,8 @@ public class PathGenerator : MonoBehaviour {
 
         bestMove = fenString[fenString.Length - 1];
 
+        currentPlayer = fenString[1];
+		
         int line = 0;
         int col = getColumn(bestMove.Substring(0, 1));
 
@@ -82,6 +96,7 @@ public class PathGenerator : MonoBehaviour {
     {
         Destroy(startPlane);
         Destroy(endPlane);
+        jumpingFigure.toggleAnimation();
         if (!bestMoveIsRunning)
         {
             bestMoveIsRunning = true;
@@ -109,13 +124,22 @@ public class PathGenerator : MonoBehaviour {
                     startPlane.transform.position = new Vector3(calculateXPosition(col1), depth, calculateZPosition(line1));
                     startPlane.transform.localScale = new Vector3(width, 1, calculateHeight(line1));
                     startPlane.transform.parent = parent.transform;
-                    startPlane.GetComponent<MeshRenderer>().material = material;
 
                     endPlane = GameObject.CreatePrimitive(PrimitiveType.Plane);
                     endPlane.transform.position = new Vector3(calculateXPosition(col2), depth, calculateZPosition(line2));
                     endPlane.transform.localScale = new Vector3(width, 1, calculateHeight(line2));
                     endPlane.transform.parent = parent.transform;
-                    endPlane.GetComponent<MeshRenderer>().material = material;
+                    
+                    if (getFigure(8 - line2, col2 - 1).getFigureType() != Figure.FigureType.EMPTY)
+                    {
+                        endPlane.GetComponent<MeshRenderer>().material = materialStrike;
+                        startPlane.GetComponent<MeshRenderer>().material = materialStrike;
+                    }
+                    else
+                    {
+                        endPlane.GetComponent<MeshRenderer>().material = material;
+                        startPlane.GetComponent<MeshRenderer>().material = material;
+                    }
 
                     Vector3 offset = endPlane.transform.localPosition - startPlane.transform.localPosition;
                     float pathLength = Mathf.Sqrt(Mathf.Pow(offset.x, 2) + Mathf.Pow(0, 2) + Mathf.Pow(offset.z, 2));
@@ -125,6 +149,7 @@ public class PathGenerator : MonoBehaviour {
         }
         else
         {
+            //Destroy(currentFigure);
             currentFigure.SetActive(false);
             bestMoveIsRunning = false;
         }
@@ -141,6 +166,10 @@ public class PathGenerator : MonoBehaviour {
 
         Figure figure;
 
+        int colTarget = getColumn(bestMove.Substring(2, 1)) - 1;
+
+        int lineTarget = 8 - getLine(bestMove.Substring(3, 1));
+
         for (int line = 0; line < 8; line++)
         {
             for (int col = 0; col < 8; col++)
@@ -151,11 +180,14 @@ public class PathGenerator : MonoBehaviour {
                 //Debug.Log(figure.getFigureType());
                 if (figure.getFigureType() != Figure.FigureType.EMPTY)
                 {
-                    Vector3 scale = figure.getFigureType() != Figure.FigureType.PAWN ? new Vector3(275, 275, 275) : new Vector3(250, 250, 250);
-                    GameObject obj = Instantiate(depthMaskFigures[(int)figure.getFigureType()], new Vector3(calculateXPosition(1 + col), depth, calculateZPosition(8 - line)), getQuaternion(figure));
-                    obj.transform.parent = GameObject.Find("Figure").transform;
-                    obj.transform.localScale = scale;
-                    depthMaskList.Add(obj);
+                    if (!(col == colTarget && line == lineTarget))
+                    {
+                        Vector3 scale = figure.getFigureType() != Figure.FigureType.PAWN ? new Vector3(275, 275, 275) : new Vector3(250, 250, 250);
+                        GameObject obj = Instantiate(depthMaskFigures[(int)figure.getFigureType()], new Vector3(calculateXPosition(1 + col), depth, calculateZPosition(8 - line)), getQuaternion(figure));
+                        obj.transform.parent = GameObject.Find("Figure").transform;
+                        obj.transform.localScale = scale;
+                        depthMaskList.Add(obj);
+                    }
                 }
             }
         }
@@ -436,6 +468,21 @@ public class PathGenerator : MonoBehaviour {
         currentFigure = Instantiate(figureList[(int)aFigure.getFigureType()]);
         currentFigure.transform.SetPositionAndRotation(new Vector3(calculateXPosition(col), depth, calculateZPosition(line)), getQuaternion(aFigure));
         currentFigure.transform.parent = GameObject.Find("Figure").transform;
+		Material[] mats;
+        if (currentPlayer == "w")
+        {
+            mats = new Material[] { whiteMaterial };
+        }
+        else
+        {
+            mats = new Material[] { blackMaterial };
+        }
+
+        MeshRenderer[] meshes = currentFigure.GetComponentsInChildren<MeshRenderer>();
+        foreach (MeshRenderer mesh in meshes)
+        {
+            mesh.materials = mats;
+        }
         /*
         if (currentFigure != null)
         {

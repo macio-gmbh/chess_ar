@@ -59,6 +59,8 @@ public:
 
 private:
 	const char* inputFile = "input.txt";
+
+	int halfmove = 0;
 };
 
 

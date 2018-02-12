@@ -28,8 +28,10 @@ public class Receiver : MonoBehaviour
 
     private bool fenReceived = false;
 
-    private AmqpExchangeReceivedMessage lastReceivedMessage;
+    private bool fenStored = false;
 
+    private AmqpExchangeReceivedMessage lastReceivedMessage;
+    
 
     // Use this for initialization
     void Start()
@@ -61,7 +63,7 @@ public class Receiver : MonoBehaviour
         {
             if (fenReceived && !GuiAnimator.GetBool("IsDisplayed"))
             {
-                if (!ErrorAnimator.GetBool("errorIsShown"))
+                if (receivedString.Substring(0, 5) != "ERROR" & (receivedString.Split(' ')[0] != "CHECK"))//(!ErrorAnimator.GetBool("errorIsShown"))
                 {
                     GuiAnimator.SetTrigger("update");
                 }
@@ -72,6 +74,7 @@ public class Receiver : MonoBehaviour
             else if (fenReceived && GuiAnimator.GetBool("IsDisplayed"))
             {
                 lastReceivedMessage = received;
+                fenStored = true;
                 Debug.Log("stored");
             }
             else
@@ -89,21 +92,36 @@ public class Receiver : MonoBehaviour
         // First convert the message's body, which is a byte array, into a string
         // example fen string: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 g1f3
         string receivedString = System.Text.Encoding.UTF8.GetString(received.Message.Body);
+        fenStored = false;
+
+        Debug.Log("received: " + receivedString);						 
         if (receivedString.Substring(0, 5) == "ERROR")
+        {
+            Debug.Log("ERROR");
+            PathController.receiveError(receivedString);
+            ErrorAnimator.SetBool("errorIsShown", true);
+            Debug.Log(ErrorAnimator.GetBool("errorIsShown"));
+        }
+        else if (receivedString.Split(' ')[0] == "CHECK")
         {
             PathController.receiveError(receivedString);
             ErrorAnimator.SetBool("errorIsShown", true);
         }
-        else if (receivedString.Substring(0, 4) == "CHECK")
+        else if (receivedString.Split(' ')[0] == "REMIS")
         {
-            PathController.receiveError(receivedString);
-            ErrorAnimator.SetBool("errorIsShown", true);
+            GuiAnimator.SetTrigger("show");
+            UiManager.enableDarkOverlay();
+            UiManager.disableCheckmatedPanel();
+            UiManager.enableRemisPanel();
+            UiManager.disableWaitingPanel();
+            UiManager.setCurrentPlayer(receivedString.Split(' ')[1]);
         }
         else if (receivedString.Split(' ')[0] == "CHECKMATED")
         {
             GuiAnimator.SetTrigger("show");
             UiManager.enableDarkOverlay();
             UiManager.enableCheckmatedPanel();
+            UiManager.disableRemisPanel();
             UiManager.disableWaitingPanel();
             UiManager.setCurrentPlayer(receivedString.Split(' ')[1]);
         }
@@ -122,6 +140,9 @@ public class Receiver : MonoBehaviour
 
     public void update()
     {
-        StartCoroutine(Wait(lastReceivedMessage));
+        if (fenStored)
+        {
+            StartCoroutine(Wait(lastReceivedMessage));
+        }
     }
 }

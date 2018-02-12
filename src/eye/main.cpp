@@ -1,6 +1,7 @@
 #include <iostream>
 #include <functional>
 #include <ctime>
+#include <windows.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -115,92 +116,177 @@ int main()
 
 	if (answer == "y") {
 		RabbitMQSender sender("localhost", 5672, "EyeToController");
-		
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppp2pp/5p2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppp2pp/5p2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppp2pp/5p2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppp2pp/5p2/4N3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppp2pp/8/4p3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppp2pp/8/4p3/4P3/8/PPPP1PPP/RNBQKB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbqkbnr/pppp2pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
-		std::cout << "rnbqkbnr/pppp2pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppppk1pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/ppppk1pp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppppk1pp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/ppppk1pp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/pppp1kpp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/pppp1kpp/8/4Q3/4P3/8/PPPP1PPP/RNB1KB1R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/pppp1kpp/8/4Q3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/pppp1kpp/8/4Q3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppp2kpp/8/3pQ3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1"); //?????
-		std::cout << "rnbq1bnr/ppp2kpp/8/3pQ3/2B1P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppp2kpp/8/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/ppp2kpp/8/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppp3pp/6k1/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/ppp3pp/6k1/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppp3pp/6k1/3BQ3/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/ppp3pp/6k1/3BQ3/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/ppp3p1/6k1/3BQ2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/ppp3p1/6k1/3BQ2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rnbq1bnr/pBp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rnbq1bnr/pBp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn1q1bnr/pbp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn1q1bnr/pbp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn1q1bnr/pbp3p1/6k1/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn1q1bnr/pbp3p1/6k1/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn1q1bnr/pbp3p1/7k/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn1q1bnr/pbp3p1/7k/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn1q1bnr/pbp3p1/7k/5Q1p/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn1q1bnr/pbp3p1/7k/5Q1p/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn1q1bnr/pbp5/7k/5Qpp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn1q1bnr/pbp5/7k/5Qpp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn1q1bnr/pbp2Q2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn1q1bnr/pbp2Q2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn3bnr/pbp1qQ2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn3bnr/pbp1qQ2/7k/6pp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn3bnr/pbp1qQ2/7k/6Pp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn3bnr/pbp1qQ2/7k/6Pp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn3bnr/pbp2Q2/7k/6qp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
-		std::cout << "rn3bnr/pbp2Q2/7k/6qp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
-		sender.Send("rn3bnr/pbp2Q2/7k/6qR/3PP3/8/PPP2PP1/RNB1K3 w KQkq - 0 1");
-		std::cout << "rn3bnr/pbp2Q2/7k/6qR/3PP3/8/PPP2PP1/RNB1K3 w KQkq - 0 1" << std::endl;
-		std::cin >> answer;
+		int k = 0; //keyflag
+		int message = 0;
+		while (true) {
+			if (k == 0 & GetAsyncKeyState(VK_RIGHT)) {
+				std::cout << std::endl;
+				switch (message)
+				{
+				case  0:
+					sender.Send("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+					std::cout << "P -> e2e4 en passant\n" << std::endl;
+					break;
+				case  1:
+					sender.Send("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+					std::cout << "p -> e7e5 en passant\n" << std::endl;
+					break;
+				case  2:
+					sender.Send("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+					std::cout << "N -> b1c3\n" << std::endl;
+					break;
+				case  3:
+					sender.Send("rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppp1ppp/8/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 1" << std::endl;
+					std::cout << "p -> h7h6\n" << std::endl;
+					break;
+				case  4:
+					sender.Send("rnbqkbnr/pppp1pp1/7p/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppp1pp1/7p/4p3/4P3/2N5/PPPP1PPP/R1BQKBNR w KQkq - 0 1" << std::endl;
+					std::cout << "N -> g1f3\n" << std::endl;
+					break;
+				case  5:
+					sender.Send("rnbqkbnr/pppp1pp1/7p/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppp1pp1/7p/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 1" << std::endl;
+					std::cout << "p -> d7d6\n" << std::endl;
+					break;
+				case  6:
+					sender.Send("rnbqkbnr/ppp2pp1/3p3p/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 1");
+					std::cout << "rnbqkbnr/ppp2pp1/3p3p/4p3/4P3/2N2N2/PPPP1PPP/R1BQKB1R w KQkq - 0 1" << std::endl;
+					std::cout << "B -> f1c4\n" << std::endl;
+					break;
+				case  7:
+					sender.Send("rnbqkbnr/ppp2pp1/3p3p/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1");
+					std::cout << "rnbqkbnr/ppp2pp1/3p3p/4p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1" << std::endl;
+					std::cout << "b -> c8h5 Error\n" << std::endl;
+					break;
+				case  8:
+					sender.Send("rn1qkbnr/ppp2pp1/3p3p/4p2b/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1");
+					std::cout << "rn1qkbnr/ppp2pp1/3p3p/4p2b/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1" << std::endl;
+					std::cout << "b -> b8g4\n" << std::endl;
+					break;
+				case  9:
+					sender.Send("rn1qkbnr/ppp2pp1/3p3p/4p3/2B1P1b1/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1");
+					std::cout << "rn1qkbnr/ppp2pp1/3p3p/4p3/2B1P1b1/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 0 1" << std::endl;
+					std::cout << "N -> f3e5\n" << std::endl;
+					break;
+				case 10:
+					sender.Send("rn1qkbnr/ppp2pp1/3p3p/4N3/2B1P1b1/2N5/PPPP1PPP/R1BQK2R w KQkq - 0 1");
+					std::cout << "rn1qkbnr/ppp2pp1/3p3p/4N3/2B1P1b1/2N5/PPPP1PPP/R1BQK2R w KQkq - 0 1" << std::endl;
+					std::cout << "b -> g4d1\n" << std::endl;
+					break;
+				case 11:
+					sender.Send("rn1qkbnr/ppp2pp1/3p3p/4N3/2B1P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1");
+					std::cout << "rn1qkbnr/ppp2pp1/3p3p/4N3/2B1P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1" << std::endl;
+					std::cout << "B -> c4f7 check\n" << std::endl;
+					break;
+				case 12:
+					sender.Send("rn1qkbnr/ppp2Bp1/3p3p/4N3/4P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1");
+					std::cout << "rn1qkbnr/ppp2Bp1/3p3p/4N3/4P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1" << std::endl;
+					std::cout << "k -> e8f7 Error\n" << std::endl;
+					break;
+				case 13:
+					sender.Send("rn1q1bnr/ppp2kp1/3p3p/4N3/4P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1");
+					std::cout << "rn1q1bnr/ppp2kp1/3p3p/4N3/4P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1" << std::endl;
+					std::cout << "k -> e8e7\n" << std::endl;
+					break;
+				case 14:
+					sender.Send("rn1q1bnr/ppp1kBp1/3p3p/4N3/4P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1"); //?????
+					std::cout << "rn1q1bnr/ppp1kBp1/3p3p/4N3/4P3/2N5/PPPP1PPP/R1BbK2R w KQkq - 0 1" << std::endl;
+					std::cout << "N -> c3d5 checkmate\n" << std::endl;
+					break;
+				case 15:
+					sender.Send("rn1q1bnr/ppp1kBp1/3p3p/3NN3/4P3/8/PPPP1PPP/R1BbK2R w KQkq - 0 1");
+					std::cout << "rn1q1bnr/ppp1kBp1/3p3p/3NN3/4P3/8/PPPP1PPP/R1BbK2R w KQkq - 0 1" << std::endl;
+					break;
+					/*
+				case 16:
+					sender.Send("rnbq1bnr/ppp2kpp/8/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
+					std::cout << "rnbq1bnr/ppp2kpp/8/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "k -> f7g6\n" << std::endl;
+					break;
+				case 17:
+					sender.Send("rnbq1bnr/ppp3pp/6k1/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1");
+					std::cout << "rnbq1bnr/ppp3pp/6k1/3BQ3/4P3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "P -> h2h4 en passant\n" << std::endl;
+					break;
+				case 18:
+					sender.Send("rnbq1bnr/ppp3pp/6k1/3BQ3/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rnbq1bnr/ppp3pp/6k1/3BQ3/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "p -> h7h5 en passant\n" << std::endl;
+					break;
+				case 19:
+					sender.Send("rnbq1bnr/ppp3p1/6k1/3BQ2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rnbq1bnr/ppp3p1/6k1/3BQ2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "B -> d5b7\n" << std::endl;
+					break;
+				case 20:
+					sender.Send("rnbq1bnr/pBp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rnbq1bnr/pBp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "r -> a8b7 Error\n" << std::endl;
+					break;
+				case 21:
+					sender.Send("1nbq1bnr/prp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "1nbq1bnr/prp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "b -> c8b7\n" << std::endl;
+					break;
+				case 22:
+					sender.Send("rn1q1bnr/pbp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn1q1bnr/pbp3p1/6k1/4Q2p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "Q -> e5f5 check\n" << std::endl;
+					break;
+				case 23:
+					sender.Send("rn1q1bnr/pbp3p1/6k1/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn1q1bnr/pbp3p1/6k1/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "k -> g6h6\n" << std::endl;
+					break;
+				case 24:
+					sender.Send("rn1q1bnr/pbp3p1/7k/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn1q1bnr/pbp3p1/7k/5Q1p/4P2P/8/PPPP1PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "P -> d2d4 en passant check\n" << std::endl;
+					break;
+				case 25:
+					sender.Send("rn1q1bnr/pbp3p1/7k/5Q1p/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn1q1bnr/pbp3p1/7k/5Q1p/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "q -> d8g5\n" << std::endl;
+					break;
+				case 26:
+					sender.Send("rn3bnr/pbp3p1/7k/5Qqp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn3bnr/pbp3p1/7k/5Qqp/3PP2P/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "P -> h4g5 checkmate\n" << std::endl;
+					break;
+				case 27:
+					sender.Send("rn3bnr/pbp3p1/7k/5QPp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn3bnr/pbp3p1/7k/5QPp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "q -> d8g5\n" << std::endl;
+					break;
+				case 26:
+					sender.Send("rn3bnr/pbp5/7k/5Qqp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1");
+					std::cout << "rn3bnr/pbp5/7k/5Qqp/3PP3/8/PPP2PP1/RNB1K2R w KQkq - 0 1" << std::endl;
+					std::cout << "B -> c1g5 checkmate\n" << std::endl;
+					break;
+				case 27:
+					sender.Send("rn3bnr/pbp5/7k/5QBp/3PP3/8/PPP2PP1/RN2K2R w KQkq - 0 1");
+					std::cout << "rn3bnr/pbp5/7k/5QBp/3PP3/8/PPP2PP1/RN2K2R w KQkq - 0 1" << std::endl;
+					break;*/
+				default:
+					sender.Send("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+					std::cout << "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" << std::endl;
+					std::cout << "######## new game ########\n" << std::endl;
+					message = 0;
+					k = 0;
+					break;
+				}
+				message++;
+				k++;
+			}
+			else {
+				k = 0;
+			}
+		}
 	}
 	else if (answer == "n") {
 		// create the image output folder

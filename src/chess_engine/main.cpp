@@ -53,6 +53,9 @@ int main() {
 			sendStr = isCheck ? "true" : "false";
 			engineSender.Send(sendStr.c_str());
 		}
+		else if (stringVector[0] == "quit") {
+			return 0;
+		}
 		else {
 			std::cout << "Error occured\n";
 		}

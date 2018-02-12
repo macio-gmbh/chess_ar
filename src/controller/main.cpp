@@ -186,6 +186,7 @@ int main() {
 
 					  //wait until initialBoard is set
 					  do {
+						  std::cout << "receive";
 						  receivedBoard = eyeReceiver.Receive();
 						  newZobrist = Zobrist(receivedBoard);
 					  } while (currentZobrist.zobristHash != newZobrist.zobristHash);
@@ -206,6 +207,7 @@ int main() {
 					  std::cout << "an ui: " << t4 << std::endl;
 				  }
 				  else if (guiMessage == "quit") {
+					  engineSender.Send("quit");
 					  return 0;
 				  }
 			  }
@@ -441,6 +443,12 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, con
 		std::cout << engineReceiveStr << "\n";
 		moveIsValid = engineReceiveStr == "true" ? true : false;
 
+		engineSendStr = "isCheck>" + fenStr;
+		engineSender.Send(engineSendStr.c_str());
+		engineReceiveStr = engineReceiver.Receive();
+		std::cout << engineReceiveStr << "\n";
+		isCheck = engineReceiveStr == "true" ? true : false;
+
 		if (moveIsValid) {//engineCommunicator.moveIsValid(fen, move.c_str())) {
 			halfMove++;
 			//enPassent
@@ -470,6 +478,10 @@ Error ValidateMove(std::vector<ChessField> difference, ChessBoard lastBoard, con
 				std::cout << "strike";
 			}
 			return NO_ERROR;
+		}
+		else if (isCheck) {//engineCommunicator.isCheck(fen)) {
+			std::cout << "check" << "\n";
+			return CHECK;
 		}
 		return WRONG_MOVE;
 	}

@@ -12,6 +12,8 @@ public class GuiManager : MonoBehaviour {
     private ChessBoard board;
 
     private Figure.Player currentPlayer;
+
+    private bool errorStored = false;
     
     public GameObject BestMove;
     public GameObject EnPassant;
@@ -29,6 +31,7 @@ public class GuiManager : MonoBehaviour {
     public Image bestMoveImage;
     public Sprite[] iconImages;
 
+	public Sprite[] errorImages;			
     public Button[] pawns;
     public Button[] figures;
 
@@ -42,9 +45,12 @@ public class GuiManager : MonoBehaviour {
     public Text errorLabel;
     public Text errorText;
     public Image errorImage;
+    public GameObject errorImageContainer;
 
+	public Animator errorAnimator;	  
 
     public GameObject DarkOverlay;
+	public GameObject RemisPanel;
     public GameObject CheckmatedPanel;
     public GameObject WaitingPanel;
     public Image CheckmatedImage;
@@ -76,11 +82,15 @@ public class GuiManager : MonoBehaviour {
 
     public void togglePanel (Animator aAnimator)
     {
-        isDisplayed = !isDisplayed;
-        aAnimator.SetBool("IsDisplayed", isDisplayed);
-        if (!isDisplayed)
+        Debug.Log(errorAnimator.GetBool("errorIsShown"));
+        if (!errorAnimator.GetBool("errorIsShown"))		 
         {
-            amqpReceiver.update();
+            isDisplayed = !isDisplayed;
+            aAnimator.SetBool("IsDisplayed", isDisplayed);
+            if (!isDisplayed)
+            {
+                amqpReceiver.update();
+            }
         }
     }
 
@@ -298,46 +308,42 @@ public class GuiManager : MonoBehaviour {
     public void setError(string errorString)
     {
         string[] errorArray = errorString.Split(' ');
-        if (errorArray[0] != "CHECK")
+        if (errorArray[0] == "ERROR1")
         {
-            if (errorArray[0] == "ERROR1")
-            {
-                string figure = errorArray[1];
-                string field = errorArray[2];
-                errorLabel.text = "Missing Figure:";
-                errorText.text = field;
-                errorImage.enabled = true;
-                errorImage.sprite = iconImages[(int)getFigureType(figure)];
-            }
-            else if (errorArray[0] == "ERROR2")
-            {
-                errorLabel.text = "Invalid Board:";
-                errorText.text = "Recalibrate the eye or reset all figures";
-                errorImage.enabled = false;
-            }
-            else if (errorArray[0] == "ERROR3")
-            {
-                string figure = errorArray[1];
-                string move = errorArray[2].ToUpper();
-                errorLabel.text = "Invalid Move:";
-                errorText.text = move;
-                errorImage.enabled = true;
-                errorImage.sprite = iconImages[(int) getFigureType(figure)];
-            }
-            else if (errorArray[0] == "ERROR4")
-            {
-                errorLabel.text = "Wrong Figure detected:";
-                errorText.text = "Make sure there is one figure each field";
-                errorImage.enabled = false;
-            }
+            string field = errorArray[1];
+
+            errorLabel.text = "Difference at field:";
+            errorText.text = field.ToUpper();
+            errorImageContainer.SetActive(false);
+        }
+        else if (errorArray[0] == "ERROR2")
+        {
+            errorLabel.text = "Invalid Board:";
+            errorText.text = "Recalibrate the eye or reset all figures";
+            errorImageContainer.SetActive(false);
+        }
+        else if (errorArray[0] == "ERROR3")
+        {
+            string figure = errorArray[1];
+            string move = errorArray[2].ToUpper();
+            errorLabel.text = "Invalid Move:";
+            errorText.text = move.Substring(0, 2).ToUpper() + " - " + move.Substring(2, 2).ToUpper();
+            errorImageContainer.SetActive(true);
+            errorImage.sprite = errorImages[(int)getFigureType(figure)];
+        }
+        else if (errorArray[0] == "ERROR4")
+        {
+            errorLabel.text = "Wrong Figure detected:";
+            errorText.text = "Make sure there is one figure each field";
+            errorImageContainer.SetActive(false);
         }
         else
         {
             string player = (currentPlayer == Figure.Player.WHITE) ? ("White") : ((currentPlayer == Figure.Player.BLACK) ? "Black" : "None");
             errorLabel.text = "Check:";
             errorText.text = player + " king is checked";
-            errorImage.enabled = true;
-            errorImage.sprite = iconImages[(int)getFigureType("K")];
+            errorImageContainer.SetActive(true);
+            errorImage.sprite = errorImages[(int)getFigureType("K")];
         }
     }
 
@@ -361,6 +367,16 @@ public class GuiManager : MonoBehaviour {
         CheckmatedPanel.SetActive(false);
     }
 
+
+    public void enableRemisPanel()
+    {
+        RemisPanel.SetActive(true);
+    }
+
+    public void disableRemisPanel()
+    {
+        RemisPanel.SetActive(false);
+    }							
     public void enableWaitingPanel()
     {
         WaitingPanel.SetActive(true);
@@ -369,5 +385,10 @@ public class GuiManager : MonoBehaviour {
     public void disableWaitingPanel()
     {
         WaitingPanel.SetActive(false);
+    }
+
+    public void setErrorStored(bool stored)
+    {
+        errorStored = stored;
     }
 }
