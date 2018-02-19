@@ -82,7 +82,7 @@ std::string ChessEngineCommunicator::askStockfishForBestMove(const char* fen) {
 		res = "g1f3";
 		break;
 	case 5:
-		res = "d7d6";
+		res = "b8c6";
 		break;
 	case 6:
 		res = "f1c4";
